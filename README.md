@@ -1,25 +1,30 @@
-
-# 2조 - 매진임박(MaeJinImBack)
-## 🎫  서비스 소개 (Momentix)
-### ⭐️ 서비스 개요
+# 프로젝트 : Momentix
 ### "특별한 순간을 예매한다"
-#### Moment + Tix (Tickets) : “순간 + 티켓” → 특별한 순간을 위한 티켓. 
-Momentix는 '특별한 순간(Moment)'을 위한 '티켓(Tix)', 그리고 그 순간을 위한 관람 문화 정보를 제공하고 그 순간을 함께하기 위한 티켓 예매를 지원하는 서비스입니다.
+Moment + Tix (Tickets) : “순간 + 티켓” → 특별한 순간을 위한 티켓. 
 
-다양한 문화 콘텐츠를 모아 보여주며, 원하는 순간을 간편하게 예매할 수 있습니다.
 
-## 목차
-1. [🔦 핵심 기능](#-핵심-기능)
-2. [📈 사용자 이용 흐름도](#-사용자-이용-흐름도)
-3. [🛠️ 시스템 아키텍처](#️-시스템-아키텍처)
-4. [🔲 Wireframe](#-wireframe)
-5. [🗄 ERD](#-erd)
-6. [🧾 API 명세서](#-api-명세서)
-7. [🛠 기술 스택](#-기술-스택)
-8. [🔩 기술적 의사결정](#-기술적-의사결정)
-9. [🔑 트러블 슈팅](#-트러블-슈팅)
-10. [👥 팀원 소개 ](#-팀원-소개)
 
+## version
+- JDK : 17.0.15 (Amazon Corretto)
+- MySQL : 8.0.34
+- Gradle : 8.14.3
+- Spring Boot : 3.5.6
+- Docker / Docker Compose
+
+- Redis 6.x
+
+
+---
+
+## bulid
+1. 깃 클론
+```
+git clone https://github.com/hansolChoi29/Momentix.git
+```
+2. `.env` 환경변수 세팅
+
+
+</br>
 
 ## 🔦 핵심기능
 
@@ -48,15 +53,7 @@ Momentix는 '특별한 순간(Moment)'을 위한 '티켓(Tix)', 그리고 그 �
 
 <img width="1091" height="691" alt="Image" src="https://github.com/user-attachments/assets/f349bd99-9bfe-4c1b-b5d5-9d8531693e5a" />
 
-## 🔲 Wireframe
 
-![Image](https://github.com/user-attachments/assets/07ff16c6-186b-4fc3-a38e-2235844abdef)
-
-## 🗄 ERD
-<img width="1382" height="845" alt="Image" src="https://github.com/user-attachments/assets/834cd14e-c16c-46de-b4fa-627b4b5230a0" />
-
-## 🧾 API명세서
-- [API 명세서](https://www.notion.so/teamsparta/API-2622dc3ef5148038969ddf25075059a1)
 ## 🛠 기술 스택
 #### 📋 Languages
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
