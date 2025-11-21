@@ -1,18 +1,24 @@
 # 프로젝트 : Momentix
 ### "특별한 순간을 예매한다"
 Moment + Tix (Tickets) : “순간 + 티켓” → 특별한 순간을 위한 티켓. 
+</br>
+개발 기간 : 2025.09.01 ~ 2025.10.2 (1개월)</br>
+개발자 : BE 4
 
+## 프로젝트 상태(Status)
 
+- 원본 저장소: 기능 개발 완료(아카이브)
+- 이 포크: 개인용 리팩토링/학습 레포
 
 ## version
+```
 - JDK : 17.0.15 (Amazon Corretto)
 - MySQL : 8.0.34
 - Gradle : 8.14.3
 - Spring Boot : 3.5.6
 - Docker / Docker Compose
-
-- Redis 6.x
-
+- Redis 6.2
+```
 
 ---
 
@@ -20,13 +26,27 @@ Moment + Tix (Tickets) : “순간 + 티켓” → 특별한 순간을 위한 �
 1. 깃 클론
 ```
 git clone https://github.com/hansolChoi29/Momentix.git
+cd Momentix
 ```
-2. `.env` 환경변수 세팅
+</br>
+
+2. `.env` 환경변수 세팅 
+</br>
+</br>
+
+3. Docker로 MySQL / Redis 실행
+```
+docker compose up -d
+./gradlew bootRun
+```
 
 
 </br>
 
-## 🔦 핵심기능
+
+
+
+##  핵심기능
 
 #### 공연 정보 탐색 및 조회
 - 다양한 조건 검색 및 필터링   <br>
