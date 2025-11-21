@@ -22,7 +22,7 @@ Moment + Tix (Tickets) : “순간 + 티켓” → 특별한 순간을 위한 �
 
 ---
 
-## bulid
+## Getting Started (로컬 실행 방법)
 1. 깃 클론
 ```
 git clone https://github.com/hansolChoi29/Momentix.git
