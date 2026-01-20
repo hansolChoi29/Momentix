@@ -1,4 +1,4 @@
-package com.example.momentix.domain.auth.dto;
+package com.example.momentix.domain.auth.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;

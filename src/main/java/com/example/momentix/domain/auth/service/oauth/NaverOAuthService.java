@@ -1,7 +1,7 @@
 package com.example.momentix.domain.auth.service.oauth;
 
 
-import com.example.momentix.domain.auth.dto.OAuthSignInResponse;
+import com.example.momentix.domain.auth.dto.response.OAuthSignInResponse;
 import com.example.momentix.domain.auth.entity.RoleType;
 import com.example.momentix.domain.auth.entity.SignIn;
 import com.example.momentix.domain.auth.repository.SignInRepository;
@@ -17,7 +17,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.momentix.domain.common.exception.auth.AuthErrorException;
+
 import static com.example.momentix.domain.common.exception.auth.AuthErrorCode.*;
+
 import java.time.LocalDate;
 
 @Slf4j
@@ -111,7 +113,7 @@ public class NaverOAuthService implements OAuthService {
             });
 
             //JWT 발급
-            String accessJwt = JwtUtil.createAccessToken(user.getUserId(), email, user.getRole());
+            String accessJwt = JwtUtil.createAccessToken(user.getUserId(), user.getEmail());
             String refreshJwt = JwtUtil.createRefreshToken(user.getUserId());
 
             return new OAuthSignInResponse(

@@ -24,11 +24,10 @@ public class JwtUtil {
     }
 
     //어세스 토큰 생성
-    public static String createAccessToken(Long userId, String email, RoleType role) {
+    public static String createAccessToken(Long userId, String email) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("userId", userId)
-                .claim("role", role.name()) //문자열로 저장
                 .claim("typ", "access") // 토큰 타입 명시해 주는 걸 권장한다고 함
                 .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN))
                 .signWith(secretKey, SignatureAlgorithm.HS256)

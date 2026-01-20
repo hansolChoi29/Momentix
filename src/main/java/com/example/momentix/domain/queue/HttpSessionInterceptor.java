@@ -10,6 +10,7 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 import java.util.Map;
 
 public class HttpSessionInterceptor implements HandshakeInterceptor {
+    // 제외대상임
     @Override
     public boolean beforeHandshake(ServerHttpRequest request,
                                     ServerHttpResponse response,

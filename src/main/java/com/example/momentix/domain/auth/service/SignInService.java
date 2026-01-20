@@ -1,18 +1,17 @@
 package com.example.momentix.domain.auth.service;
 
 
-import com.example.momentix.domain.auth.entity.RoleType;
+import com.example.momentix.domain.auth.dto.command.SignInCommand;
+import com.example.momentix.domain.auth.dto.SignInDto;
 import com.example.momentix.domain.auth.entity.SignIn;
 import com.example.momentix.domain.auth.repository.SignInRepository;
 import com.example.momentix.domain.common.util.JwtUtil;
-import lombok.Getter;
+import com.example.momentix.domain.users.entity.Users;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.*;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.stereotype.Service;
 import com.example.momentix.domain.common.exception.auth.AuthErrorException;
+
 import static com.example.momentix.domain.common.exception.auth.AuthErrorCode.*;
 
 
@@ -22,55 +21,30 @@ public class SignInService {
     private final AuthenticationManager authenticationManager;
     private final SignInRepository signInRepository;
 
-    public Tokens signIn(String username, String rawPassword) {
-        // 400
-        if (username == null || username.isBlank() || rawPassword == null || rawPassword.isBlank()) {
-            throw new AuthErrorException(BAD_REQUEST);
-        }
+    public SignInDto signIn(SignInCommand signInCommand) {
+        // TODO : validator 생성 요망
+        // TODO : UserDetailsImpl, UserDetailsServiceImpl 는
+        //  “Spring Security가 로그인 검증할 때 쓰는 어댑터”
 
-        try {
-            // 인증 시도 (아이디/비번 불일치면 BadCredentialsException)
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(username, rawPassword)
-            );
+        // 유저객체가 왜 서비스에 있음;;
+        // 로그인에서 어세스토큰과 리프레시토큰을 발급해야 하는데;;
+        // TODO : username으로 DB에서 SignIn/User 조회
+        // TODO : 비밀번호 매칭 확인(PasswordEncoder.matches)
+        // TODO : 토큰(access/refresh) 생성해서 DTO로 반환
+        // TODO : 명심 - Authentication / UserDetails / GrantedAuthority 호출 금지
+        // 401가 왜 서비스에 있음?;;
 
-            UserDetails principal = (UserDetails) authentication.getPrincipal();
-            String resolvedUsername = principal.getUsername();
+        SignIn user = signInRepository.findByUsername(signInCommand.getUsername())
+                .orElseThrow(() -> new AuthErrorException(NOT_FOUND));
 
-            RoleType role = principal.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .map(r -> r.replace("ROLE_", ""))
-                    .map(RoleType::valueOf)
-                    .findFirst()
-                    .orElse(RoleType.CONSUMER);
-
-            // 401
-            Long userId = signInRepository.findUserIdByUsername(resolvedUsername)
-                    .orElseThrow(() -> new AuthErrorException(NOT_FOUND));
-
-            String accessToken = JwtUtil.createAccessToken(userId, resolvedUsername, role);
-            String refreshToken = JwtUtil.createRefreshToken(userId);
-
-            return new Tokens(accessToken, refreshToken);
-        } catch (BadCredentialsException e) {
-            // 401
-            throw new AuthErrorException(BAD_REQUEST);
-        } catch (DisabledException | LockedException | AccountExpiredException e) {
-            // 403
-            throw new AuthErrorException(BLACK_USER);
-        }
+        String accessToken = JwtUtil.createAccessToken(user.getSignInId(), user.getUsername());
+        String refreshToken = JwtUtil.createRefreshToken(user.getSignInId());
+        return new SignInDto(accessToken, refreshToken);
     }
 
     // 리프레시 엔드포인트
     public SignIn loadByUserId(Long userId) {
         return signInRepository.findById(userId)
                 .orElseThrow(() -> new AuthErrorException(NOT_FOUND));
-    }
-
-    @Getter
-    @RequiredArgsConstructor
-    public static class Tokens {
-        private final String accessToken;
-        private final String refreshToken;
     }
 }

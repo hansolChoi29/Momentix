@@ -1,5 +1,7 @@
 package com.example.momentix.domain.auth.service;
 
+import com.example.momentix.domain.auth.dto.EmailDto;
+import com.example.momentix.domain.auth.dto.command.EmailCommand;
 import com.example.momentix.domain.common.exception.auth.AuthErrorException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,7 +9,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+
 import static com.example.momentix.domain.common.exception.auth.AuthErrorCode.*;
+
 import java.time.Duration;
 import java.util.UUID;
 
@@ -42,27 +46,28 @@ public class EmailVerificationService {
     }
 
     //인증 코드 발송
-    public void sendCode(String email) {
+    public EmailDto sendCode(EmailCommand command) {
         String code = String.valueOf((int) (Math.random() * 900000) + 100000); //6자리
         //쿨다운
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(cooldownKey(email)))) {
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(cooldownKey(command.getEmail())))) {
             throw new AuthErrorException(EMAIL_CODE_REQUEST_TOO_FREQUENT);
         }
         // 코드 저장 (TTL)
-        redisTemplate.opsForValue().set(codeKey(email), code, Duration.ofSeconds(codeTtlSec));
+        redisTemplate.opsForValue().set(codeKey(command.getEmail()), code, Duration.ofSeconds(codeTtlSec));
         // 쿨다운 시작
-        redisTemplate.opsForValue().set(cooldownKey(email), "1", Duration.ofSeconds(cooldownSec));
+        redisTemplate.opsForValue().set(cooldownKey(command.getEmail()), "1", Duration.ofSeconds(cooldownSec));
 
         // SimpleMailMessage: 제목, 본문, 수신자만 간단히 담는 이메일 객체
         SimpleMailMessage message = new SimpleMailMessage();
         //수신자 이메일 설정
-        message.setTo(email);
+        message.setTo(command.getEmail());
         // 메일 제목
         message.setSubject("[MOMENTIX] 이메일 인증 코드");
         // 메일 본문 설정
         message.setText("인증 코드 " + code + "\n유효시간: " + (codeTtlSec / 60) + "분");
         // 실제 메일 전송(STMP서버 통해 발송)
         mailSender.send(message);
+        return null;
     }
 
     // 사용자가 제출한 이메일/코드 확인하고 인증 성공 시 1회용 검증 토큰 발생
@@ -86,14 +91,12 @@ public class EmailVerificationService {
 
     //최종 가입에서 토큰 소비 -> 이메일 복구(1회성)
     public String consumerVerifiedToken(String token) {
-        // 1. 토큰 문자열을 redis key형태로 반환
-        String key = tokenKey(token);
-        //2. redis에서 이 토큰에 매핑된 이메일 값 조회
-        String email = redisTemplate.opsForValue().get(key);
-        //3. 조회된 값이 없거나 공백이면 토큰 만료되었거나 이미 사용중
-        if (email == null || email.isBlank()) {
-            throw new AuthErrorException(EMAIL_TOKEN_EXPIRED);
+            String key = tokenKey(token);
+            String email = redisTemplate.opsForValue().get(key);
+            if (email == null || email.isBlank()) {
+                throw new AuthErrorException(EMAIL_TOKEN_EXPIRED);
+            }
+            redisTemplate.delete(key); // 1회성 소비
+            return email;
         }
-        return email;
-    }
 }

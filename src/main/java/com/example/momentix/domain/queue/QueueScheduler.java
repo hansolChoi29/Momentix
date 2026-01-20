@@ -1,6 +1,7 @@
 package com.example.momentix.domain.queue;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -10,6 +11,7 @@ import java.util.Set;
 
 @RequiredArgsConstructor
 @Component
+@Profile("prod") // 리펙토링 단계, 운영환경으로 돌려 놓음
 public class QueueScheduler {
 
     private final QueueService queueService;

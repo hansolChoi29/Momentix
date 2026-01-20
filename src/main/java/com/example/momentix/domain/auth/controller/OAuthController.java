@@ -1,7 +1,7 @@
 package com.example.momentix.domain.auth.controller;
 
 
-import com.example.momentix.domain.auth.dto.OAuthSignInResponse;
+import com.example.momentix.domain.auth.dto.response.OAuthSignInResponse;
 import com.example.momentix.domain.auth.entity.OAuthProvider;
 import com.example.momentix.domain.auth.service.oauth.OAuthService;
 import com.example.momentix.domain.auth.service.oauth.OAuthServiceFactory;

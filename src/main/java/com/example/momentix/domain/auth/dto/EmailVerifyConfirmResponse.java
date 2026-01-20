@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 public class EmailVerifyConfirmResponse {
     // 검증 성공하고 토큰 응답용
     private String emailVerifiedToken;
+    public String getEmailVerifiedToken(){
+        return emailVerifiedToken;
+    }
 }
 // 3) 서버가 클라이언트에 검증 토큰 응답(EmailVerifyConfirmResponse)
 //이후 회원가입 시 이 토큰을 헤더(X-Email-Verify-Token)로 보내서 인증된 이메일을 복구
