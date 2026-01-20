@@ -1,6 +1,8 @@
 package com.example.momentix.domain.auth.service;
 
 import com.example.momentix.domain.auth.dto.EmailDto;
+import com.example.momentix.domain.auth.dto.EmailVerifyConfirmCommand;
+import com.example.momentix.domain.auth.dto.EmailVerifyConfirmDto;
 import com.example.momentix.domain.auth.dto.command.EmailCommand;
 import com.example.momentix.domain.common.exception.auth.AuthErrorException;
 import lombok.RequiredArgsConstructor;
@@ -71,32 +73,29 @@ public class EmailVerificationService {
     }
 
     // 사용자가 제출한 이메일/코드 확인하고 인증 성공 시 1회용 검증 토큰 발생
-    public String confirmAndIssueToken(String email, String code) {
-        // 1. redis에서 저장된 인증 코드 조회
-        String saved = redisTemplate.opsForValue().get(codeKey(email));
-        // 2. 저장된 코드가 없거나 사용자가 입력한 값과 다르면 인증 실패임
-        if (saved == null || !saved.equals(code)) {
+    public EmailVerifyConfirmDto confirmAndIssueToken(EmailVerifyConfirmCommand command) {
+        String saved = redisTemplate.opsForValue().get(codeKey(command.getEmail()));
+        if (saved == null || !saved.equals(command.getCode())) {
             throw new AuthErrorException(EMAIL_CODE_INVALID);
         }
-        // 3. 인증 코드 1회 사용 후 바로 제거, 재사용 방지
-        redisTemplate.delete(codeKey(email));
+        redisTemplate.delete(codeKey(command.getEmail()));
 
-        // 4. 인증 성공했으므로 새로운 검증 토큰 발급(UUID 형태, 고유 값)
         String token = UUID.randomUUID().toString();
-        // 5. 발급된 토큰을 reids에 저장(유효시간 TTL 설정, 15분)
-        redisTemplate.opsForValue().set(tokenKey(token), email, Duration.ofSeconds(tokenTtlSec));
-        // 6. 발급된 토큰을 클라이언트에 반환
-        return token;
+        redisTemplate.opsForValue().set(
+                tokenKey(token),
+                command.getEmail(),
+                Duration.ofSeconds(tokenTtlSec)
+        );
+        return new EmailVerifyConfirmDto(token);
     }
 
-    //최종 가입에서 토큰 소비 -> 이메일 복구(1회성)
     public String consumerVerifiedToken(String token) {
-            String key = tokenKey(token);
-            String email = redisTemplate.opsForValue().get(key);
-            if (email == null || email.isBlank()) {
-                throw new AuthErrorException(EMAIL_TOKEN_EXPIRED);
-            }
-            redisTemplate.delete(key); // 1회성 소비
-            return email;
+        String key = tokenKey(token);
+        String email = redisTemplate.opsForValue().get(key);
+        if (email == null || email.isBlank()) {
+            throw new AuthErrorException(EMAIL_TOKEN_EXPIRED);
         }
+        redisTemplate.delete(key);
+        return email;
+    }
 }

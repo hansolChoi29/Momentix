@@ -73,10 +73,14 @@ public class AuthController {
 
     // 코드확인 및 검증 토큰 발급
     @PostMapping("/sign-up-verify/email-verification")
-    public ResponseEntity<ApiResponse<String>> confirmEmailCode(
-            @RequestBody EmailVerifyConfirm req) {
-        String token = emailVerificationService.confirmAndIssueToken(req.getEmail(), req.getCode());
-        return ResponseEntity.ok(ApiResponse.ok(token, "인증코드"));
+    public ResponseEntity<ApiResponse<EmailVerifyConfirmResponse>> confirmEmailCode(
+            @RequestBody EmailVerifyConfirm request) {
+        EmailVerifyConfirmCommand command = new EmailVerifyConfirmCommand(
+                request.getEmail(), request.getCode()
+        );
+        EmailVerifyConfirmDto token = emailVerificationService.confirmAndIssueToken(command);
+        EmailVerifyConfirmResponse response = new EmailVerifyConfirmResponse(token.getToken());
+        return ResponseEntity.ok(ApiResponse.ok(response, "인증코드"));
     }
 
 
