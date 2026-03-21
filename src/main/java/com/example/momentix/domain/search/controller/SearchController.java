@@ -17,13 +17,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/search")
 public class SearchController {
-
     private final SearchService searchService;
 
     public SearchController(SearchService searchService) {
         this.searchService = searchService;
     }
-
 
     @GetMapping
     public ResponseEntity<Page<SearchResponseDto>> searchEvent(
@@ -33,7 +31,6 @@ public class SearchController {
             @AuthenticationPrincipal(expression = "userId") Long userId
     ) {
         Page<SearchResponseDto> response = searchService.searchEvent(searchRequestDto, pageable);
-
 
         // 검색 로그를 저장(검색어, 카테고리, 기간, 사용자, IP 등)
         /// 검색 결과를 반호나하는 것과 동시에 (비동기)
@@ -58,7 +55,6 @@ public class SearchController {
         return (realIp != null && !realIp.isBlank()) ? realIp : req.getRemoteAddr();
     }
 
-
     // 자동완성- 그 글자로 시작하는 추천 단어
     @GetMapping("/autocomplete")
     public List<AutocompleteResponse> autocomplete(
@@ -67,7 +63,6 @@ public class SearchController {
         return searchService.autocomplete(query, size);
     }
 
-
     // 인기검색어
     @GetMapping("/popular-queries")
     public List<AutocompleteResponse> popularQueries(
@@ -75,7 +70,6 @@ public class SearchController {
             @RequestParam(value = "size", defaultValue = "10") int size) {
         return searchService.popularQueries(hours, size);
     }
-
 
     // 시간대별 건수
     @GetMapping("/hourly-counts")
