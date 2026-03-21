@@ -1,5 +1,6 @@
 package com.example.momentix.domain.review.service;
 
+import com.example.momentix.domain.auth.entity.RoleType;
 import com.example.momentix.domain.common.exception.event.EventErrorException;
 import com.example.momentix.domain.common.exception.review.ReviewErrorException;
 import com.example.momentix.domain.events.entity.Events;
@@ -78,13 +79,18 @@ public class ReviewService {
     }
 
     @Transactional
-    public void deleteReview(Long reviewId, Users user) {
-
+    public void deleteReview(
+            Long reviewId,
+            Users user
+    ) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ReviewErrorException(REVIEW_NOT_FOUND));
+        // TODO : 본인 or ADMIN만 삭제 가능
+        boolean isAdmin = user.getRole() == RoleType.ADMIN;
+        boolean isOwner = review.getUsers().getUserId().equals(user.getUserId());
 
-        if (!(user.getRole().name().equals("ADMIN") || review.getUsers().getUserId().equals(user.getUserId()))) {
-            throw new ReviewErrorException(FORBIDDEN);
+        if (!isAdmin && !isOwner) {
+            throw new ReviewErrorException(REVIEW_NOT_AUTHORIZED);
         }
 
         review.softDelete(); // Review 엔티티에 softDelete() 메소드 추가 필요
