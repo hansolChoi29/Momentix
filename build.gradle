@@ -68,7 +68,7 @@ dependencies {
     implementation("com.slack.api:slack-api-client:1.44.2")
 
     // S3
-    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.2.1'
 
     //queryDSL
     implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
