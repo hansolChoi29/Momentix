@@ -49,7 +49,6 @@ public class SearchService {
     //엘라스틱서치
 
     // 자동완성
-    // TODO : 자동완성 비어있는 경우 어떻게 처리할 건지 -> 폴백(인기검색어 대신 반환)
     @Transactional(readOnly = true)
     public List<AutocompleteResponse> autocomplete(
             String input,
