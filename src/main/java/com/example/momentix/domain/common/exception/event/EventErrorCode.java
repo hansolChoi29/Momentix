@@ -20,13 +20,14 @@ public enum EventErrorCode {
     DM_OPEN_FAILED(400, "DM 오픈 실패"),
     MESSAGE_SEND_FAILED(400, "메시지 전송 실패"),
     FIRST_SELECT_EVENT(404, "공연이 먼저 선택되어야 합니다."),
-    NOT_EVENT_LOCAL(404,"공연 장소가 선택되지 않았습니다."),
-    NOT_TIME(404,"해당 공연에 공연 시간이 없습니다."),
-    NOT_EVENT(404,"해당 공연의 공연 장소가 없습니다."),
+    NOT_EVENT_LOCAL(404, "공연 장소가 선택되지 않았습니다."),
+    NOT_TIME(404, "해당 공연에 공연 시간이 없습니다."),
+    NOT_EVENT(404, "해당 공연의 공연 장소가 없습니다."),
 
-    NOT_SELECT_TIME(404,"공연 시간이 선택되지 않았습니다."),
+    NOT_SELECT_TIME(404, "공연 시간이 선택되지 않았습니다."),
     EVENT_SELECTION_NOT_AVAILABLE(400, "공연장 선택이 불가능합니다."),
-    NO_SLACK(500,"슬랙 메시지 전송 실패");
+    NO_SLACK(500, "슬랙 메시지 전송 실패");
+
 
     private final int status;
     private final String message;

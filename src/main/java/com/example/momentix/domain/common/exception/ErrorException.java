@@ -16,5 +16,4 @@ public abstract class ErrorException extends RuntimeException {
     public String getMessage() {
         return message;
     }
-
 }

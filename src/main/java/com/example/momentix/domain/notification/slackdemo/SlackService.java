@@ -19,7 +19,7 @@ import static com.example.momentix.domain.common.exception.event.EventErrorCode.
 
 @Service
 public class SlackService {
-
+// 제외대상임
 
     private final String botToken;
 

@@ -16,7 +16,6 @@ public enum AuthErrorCode {
     EMAIL_TOKEN_EXPIRED(401, "인증 토큰이 만료되었거나 이미 사용되었습니다."),
     AUTHENTICATION_REQUIRED(401, "인증이 필요합니다."),
 
-    // 카카오
     OAUTH_STATE_MISMATCH(401, "요청 상태값이 일치하지 않습니다."),
     OAUTH_TOKEN_EXCHANGE_FAILED(400, "소셜 토큰 발급에 실패했습니다."),
     OAUTH_PROFILE_FETCH_FAILED(400, "소셜 프로필 조회에 실패했습니다."),

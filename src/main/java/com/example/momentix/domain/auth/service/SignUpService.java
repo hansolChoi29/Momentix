@@ -1,6 +1,6 @@
 package com.example.momentix.domain.auth.service;
 
-import com.example.momentix.domain.auth.dto.SignUpRequest;
+import com.example.momentix.domain.auth.dto.request.SignUpRequest;
 import com.example.momentix.domain.auth.repository.SignInRepository;
 import com.example.momentix.domain.users.entity.Users;
 import com.example.momentix.domain.users.repository.UserRepository;

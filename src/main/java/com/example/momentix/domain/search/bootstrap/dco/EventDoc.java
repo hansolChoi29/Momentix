@@ -47,7 +47,6 @@ public class EventDoc {
         this.eventTitleSuggest = eventTitleSuggest;
         this.placeNameSuggest = placeNameSuggest;
     }
-
     // 자동완성에 들어갈 값들
     @Getter
     public static class SuggestField {

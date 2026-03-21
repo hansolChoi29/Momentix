@@ -1,6 +1,6 @@
 package com.example.momentix.domain.users.entity;
 
-import com.example.momentix.domain.auth.dto.SignUpRequest;
+import com.example.momentix.domain.auth.dto.request.SignUpRequest;
 import com.example.momentix.domain.auth.entity.RoleType;
 import com.example.momentix.domain.auth.entity.SignIn;
 import com.example.momentix.domain.common.entity.TimeStamped;
@@ -47,6 +47,10 @@ public class Users extends TimeStamped {
     @OneToOne(mappedBy = "users", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private SignIn signIn;
 
+    // users - auth 식별관계 users.id + auth.id
+    // users - auth 비식별관계 users.id <- 이것만
+
+    private String email;
 
     //Consumer(일반 유저) 회원가입 시 Users + SignIn 객체를 생성
     // 양방향, 1:1 관계 (한 유저당 로그인 계정 하나)
@@ -67,7 +71,8 @@ public class Users extends TimeStamped {
     }
 
     // Host(호스트 회원) 회원가입 시 Users + SignIn 객체를 생성하는 정적 메서드
-    public static Users createHost(String businessNumber, String username, String rawPassword, PasswordEncoder encoder) {
+    public static Users createHost(String businessNumber, String username, String rawPassword,
+                                   PasswordEncoder encoder) {
         Users users = new Users();
         users.setRole(RoleType.HOST);
         users.setBusinessNumber(businessNumber);
@@ -76,6 +81,10 @@ public class Users extends TimeStamped {
         users.setSignIn(signIn);
 
         return users;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public void setNickname(String nickname) {

@@ -2,7 +2,7 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: ["dev"]
+    branches: [ "dev" ]
   workflow_dispatch:
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           source: "build/libs/*.jar"
-          target: "/home/ec2-user/momentix/" 
+          target: "/home/ec2-user/momentix/"
 
       - name: Restart app on EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -41,24 +41,16 @@ jobs:
             LOG="$APP_DIR/app.log"
             JAR="$(ls -1t "$APP_DIR"/build/libs/*.jar | grep -v plain | head -n 1 || true)"
             [ -z "${JAR:-}" ] && echo "no runnable JAR in $APP_DIR/build/libs" && exit 1
-      
+            
             # 이전 버전 종료(경로 기준)
             pkill -f "$APP_DIR/build/libs/.*\.jar" || true
-      
+            
             # .env를 읽게 하려면 작업 디렉토리를 APP_DIR로
             cd "$APP_DIR"
-      
+            
             # 프로필은 prod로, 나머지 값은 .env에서 읽힘
             nohup java -jar "$JAR" --spring.profiles.active=prod > "$LOG" 2>&1 &
 
-
-            # test용 - 나중에 SecurityConfig에 코드 넣어야 함
-            EXCLUDE="org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration"
-            # test용 - 나중에 SecurityConfig에 코드 넣어야 함
-            nohup env SPRING_PROFILES_ACTIVE=prod \
-               SPRING_AUTOCONFIGURE_EXCLUDE="$EXCLUDE" \
-                java -jar "$JAR" > "$LOG" 2>&1 &
-      
             sleep 4
             pgrep -f "$(basename "$JAR")" >/dev/null || (tail -n 200 "$LOG"; exit 1)
             echo "OK"

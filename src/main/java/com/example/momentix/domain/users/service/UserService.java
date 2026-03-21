@@ -1,5 +1,6 @@
 package com.example.momentix.domain.users.service;
 
+import com.example.momentix.domain.auth.entity.RoleType;
 import com.example.momentix.domain.auth.entity.SignIn;
 import com.example.momentix.domain.auth.impl.UserDetailsImpl;
 import com.example.momentix.domain.auth.repository.SignInRepository;
@@ -98,16 +99,12 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public ReadUserSimpleResponseDto readUserSimple(Long userId, UserDetailsImpl principal) {
-        if (principal == null) {
-            throw new AuthErrorException(AUTHENTICATION_REQUIRED);
-        }
+    public ReadUserSimpleResponseDto readUserSimple(Long userId, String email) {
+        SignIn signIn = signInRepository.findByUsername(email)
+                .orElseThrow(() -> new AuthErrorException(AUTHENTICATION_REQUIRED));
 
-        boolean isAdmin = principal.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(role -> role.equals("ROLE_ADMIN"));
-
-        boolean isSelf = principal.getUserId().equals(userId);
+        boolean isAdmin = signIn.getUser().getRole() == RoleType.ADMIN;
+        boolean isSelf = signIn.getUser().getUserId().equals(userId);
 
         if (!isAdmin && !isSelf) {
             throw new AuthErrorException(FORBIDDEN);

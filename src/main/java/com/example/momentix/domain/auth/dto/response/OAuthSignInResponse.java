@@ -1,4 +1,4 @@
-package com.example.momentix.domain.auth.dto;
+package com.example.momentix.domain.auth.dto.response;
 
 
 import lombok.AllArgsConstructor;

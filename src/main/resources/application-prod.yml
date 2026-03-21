@@ -1,0 +1,63 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:${DB_PORT}/momentix
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        show_sql: false
+        dialect: org.hibernate.dialect.MySQLDialect
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
+logging:
+  level:
+    org.springframework.security: WARN
+
+jwt:
+  secret: ${JWT_SECRET}
+
+slack:
+  bot-token: ${BOT_TOKEN}
+
+cloud:
+  aws:
+    credentials:
+      accessKey: ${AWS_ACCESS_KEY_ID}
+      secretKey: ${AWS_SECRET_ACCESS_KEY}
+    s3:
+      bucket: ${AWS_BUCKET}
+    region:
+      static: ${AWS_REGION}
+    stack:
+      auto: false
+
+naver:
+  client:
+    id: ${NAVER_CLIENT_ID}
+    secret: ${NAVER_CLIENT_SECRET}
+  redirect:
+    uri: ${NAVER_REDIRECT_URI}
+
+kakao:
+  client:
+    id: ${KAKAO_CLIENT_ID}
+    secret: ${KAKAO_CLIENT_SECRET}
+  redirect:
+    uri: ${KAKAO_REDIRECT_URI}
+
+  mail:
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+
+elasticsearch:
+  url: ${ELASTICSEARCH_URL}
+  apikey: ${ELASTIC_API_KEY}
+search:
+  bootstrap:
+    enabled: true

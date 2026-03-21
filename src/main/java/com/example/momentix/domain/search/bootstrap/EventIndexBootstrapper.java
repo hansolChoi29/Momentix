@@ -13,22 +13,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(name = "search.bootstrap.enabled", havingValue = "true")// 로컬만 켜두고 기본(배표)은 꺼두기
 public class EventIndexBootstrapper {
-
     // 실행조건: 설정(search.bootstrap.enabled=true)일 때만 동작
     // ES 인덱스(테이블 같은 것) 없으면 만들고
     // MySQL에 있는 이벤트+장소 데이터를 전부 ES에 넣는다
 
-
     private static final Logger log = LoggerFactory.getLogger(EventIndexBootstrapper.class);
 
-
     private final EventIndexService eventIndexService;
-
 
     public EventIndexBootstrapper(EventIndexService eventIndexService) {
         this.eventIndexService = eventIndexService;
     }
-
 
     //스프링 부트가 켜질 때 자동으로 한 번 실행됨
     @Bean

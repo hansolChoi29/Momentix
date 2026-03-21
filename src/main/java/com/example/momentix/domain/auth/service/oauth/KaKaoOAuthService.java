@@ -1,6 +1,6 @@
 package com.example.momentix.domain.auth.service.oauth;
 
-import com.example.momentix.domain.auth.dto.OAuthSignInResponse;
+import com.example.momentix.domain.auth.dto.response.OAuthSignInResponse;
 import com.example.momentix.domain.auth.entity.RoleType;
 import com.example.momentix.domain.auth.entity.SignIn;
 import com.example.momentix.domain.auth.repository.SignInRepository;

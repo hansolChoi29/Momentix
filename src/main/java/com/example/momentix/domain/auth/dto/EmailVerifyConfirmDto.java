@@ -1,12 +1,9 @@
 package com.example.momentix.domain.auth.dto;
 
-
-
-
-public class EmailVerifyConfirmResponse {
+public class EmailVerifyConfirmDto {
     private String token;
 
-    public EmailVerifyConfirmResponse(String token) {
+    public EmailVerifyConfirmDto(String token) {
         this.token = token;
     }
 

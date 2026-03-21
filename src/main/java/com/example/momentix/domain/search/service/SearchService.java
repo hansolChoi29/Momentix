@@ -20,15 +20,11 @@ import java.util.List;
 @Service
 public class SearchService {
     private final EventsRepository eventsRepository;
-
-
     private final SuggestRepository suggestRepository;
     private final AnalyticsRepository analyticsRepository;
-
     // 인기 검색어 캐시 (1시간 단위 랭킹 고정 노출)
     private volatile List<AutocompleteResponse> cachedPopular = null;
     private volatile long popularCacheExpireAtMillis = 0L; // 캐시 만료 시각(밀리초)
-
 
     public SearchService(
             EventsRepository eventsRepository,
@@ -41,17 +37,31 @@ public class SearchService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SearchResponseDto> searchEvent(SearchRequestDto searchRequestdto, Pageable pageable) {
-        return eventsRepository.searchEventByParam(searchRequestdto, pageable);
+    public Page<SearchResponseDto> searchEvent(
+            SearchRequestDto searchRequestdto,
+            Pageable pageable
+    ) {
+        return eventsRepository.searchEventByParam(
+                searchRequestdto,
+                pageable
+        );
     }
-
     //엘라스틱서치
 
     // 자동완성
+    // TODO : 자동완성 비어있는 경우 어떻게 처리할 건지 -> 폴백(인기검색어 대신 반환)
     @Transactional(readOnly = true)
-    public List<AutocompleteResponse> autocomplete(String input, int size) {
+    public List<AutocompleteResponse> autocomplete(
+            String input,
+            int size
+    ) {
         int limit = size > 0 ? size : IndexNames.DEFAULT_SUGGEST_SIZE;
-        return suggestRepository.suggest(input, limit);
+        List<AutocompleteResponse> result = suggestRepository.suggest(input, limit);
+        // 결과 없으면 인기검색어로 폴백
+        if (result.isEmpty()) {
+            return popularQueries(1, limit);
+        }
+        return result;
     }
 
     // 1-1. 시간대별 검색 수 집계
@@ -72,7 +82,10 @@ public class SearchService {
     }
 
     @Transactional(readOnly = true)
-    public List<AutocompleteResponse> popularQueries(int hours, int size) {
+    public List<AutocompleteResponse> popularQueries(
+            int hours,
+            int size
+    ) {
         final int topN = (size > 0) ? size : 10;
         final long now = System.currentTimeMillis();
 
@@ -102,15 +115,19 @@ public class SearchService {
 
     // 검색 로그 비동기 적재 (인기검색어 집계의 원천 데이터)
     @Async
-    public void logSearchAsync(SearchRequestDto req, String userId, String ip) {
-        if (req == null || req.getQuery() == null || req.getQuery().isBlank()) return;
+    public void logSearchAsync(
+            SearchRequestDto request,
+            String userId,
+            String ip
+    ) {
+        if (request == null || request.getQuery() == null || request.getQuery().isBlank()) return;
 
-        String category = (req.getEventCategory() == null) ? null : req.getEventCategory().name();
-        String start = (req.getSearchStartDate() == null) ? null : req.getSearchStartDate().toString();
-        String end = (req.getSearchEndDate() == null) ? null : req.getSearchEndDate().toString();
+        String category = (request.getEventCategory() == null) ? null : request.getEventCategory().name();
+        String start = (request.getSearchStartDate() == null) ? null : request.getSearchStartDate().toString();
+        String end = (request.getSearchEndDate() == null) ? null : request.getSearchEndDate().toString();
 
         SearchLogDoc doc = new SearchLogDoc(
-                req.getQuery(),
+                request.getQuery(),
                 category,
                 start,
                 end,

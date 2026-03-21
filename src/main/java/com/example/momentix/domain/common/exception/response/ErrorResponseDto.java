@@ -1,4 +1,4 @@
-package com.example.momentix.domain.common.exception;
+package com.example.momentix.domain.common.exception.response;
 
 public class ErrorResponseDto {
     private int status;

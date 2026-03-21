@@ -115,7 +115,11 @@ public class ReservationService {
 
     // 장소 재선택 - 따로 뺀 이유 : 재선택 하려면 어느 예약을 바꿀지 reservationId가 필요
     @Transactional
-    public ReservationResponseDto reselectEvent(Long userId, Long reservationId, Long eventId) {
+    public ReservationResponseDto reselectEvent(
+            Long userId,
+            Long reservationId,
+            Long eventId
+    ) {
         if (!usersRepository.existsById(userId)) {
             throw new AuthErrorException(NOT_FOUND);
         }
@@ -126,11 +130,11 @@ public class ReservationService {
         }
 
         // 허용 상태만 재선택 가능 (최소한의 체크)
-//        switch (reservations.getReservationStatusType()) {
-//            case DRAFT, SELECT_PLACE, SELECT_TIME, SELECT_SEAT -> {
-//            }
-//            default -> throw new IllegalArgumentException("공연 선택이 불가능합니다.");
-//        }
+        switch (reservations.getReservationStatusType()) {
+            case DRAFT, SELECT_PLACE, SELECT_TIME, SELECT_SEAT -> {
+            }
+            default -> throw new IllegalArgumentException("공연 선택이 불가능합니다.");
+        }
 
         Events event = eventsRepository.findById(eventId)
                 .orElseThrow(() -> new EventErrorException(EVENT_NOT_FOUND));
@@ -284,57 +288,6 @@ public class ReservationService {
 
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new EventErrorException(SEAT_ALREADY_BOOKED);
-        } finally {
-            // 3. 작업 완료 후 안전하게 Redis 락 해제
-            redisLockRepository.unlock(lockKey);
-        }
-
-        return ReservationResponseDto.from(r);
-    }
-    @Transactional
-    public ReservationResponseDto testSelectEventSeat(Long eventTimeReserveSeatId) {
-
-        // --- 1. 기존 유효성 검증 로직 ---
-//        if (!usersRepository.existsById(userId)) {
-//            throw new AuthErrorException(NOT_FOUND);
-//        }
-//        Reservations r = reservationsRepository.findById(reservationId)
-//                .orElseThrow(() -> new ReservationErrorException(NO_RESERVATION));
-//        if (!r.getUsers().getUserId().equals(userId)) {
-//            throw new ReservationErrorException(NO_MY_RESERVATION);
-//        }
-//        if (r.getEvents() == null)
-//            throw new EventErrorException(FIRST_SELECT_EVENT);
-//        if (r.getEventPlace() == null)
-//            throw new EventErrorException(NOT_EVENT_LOCAL);
-//        if (r.getEventTimes() == null)
-//            throw new EventErrorException(NOT_SELECT_TIME);
-//        switch (r.getReservationStatusType()) {
-//            case SELECT_TIME, SELECT_SEAT -> {
-//            }
-//            default -> throw new EventErrorException(SEAT_NOT_FOUND);
-//        }
-
-        // --- 2. Lua 스크립트 + DB 낙관적 락 적용 ---
-        String lockKey = "seat_lock:" + eventTimeReserveSeatId;
-
-        // 1차 잠금: Lua 스크립트 시도 (로직이 매우 간결해짐)
-        if (!redisLockRepository.lock(lockKey, Duration.ofMinutes(5))) {
-            throw new EventErrorException(SEAT_ALREADY_BOOKED);
-        }
-        Reservations r = Reservations.builder()
-                .reservationStatusType(ReservationStatusType.SELECT_SEAT)
-                .build();
-        try {
-            // 2차 잠금: DB 낙관적 락으로 좌석 조회 및 상태 변경
-            EventTimeReserveSeat seat = eventTimeReserveSeatRepository.findById(eventTimeReserveSeatId)
-                    .orElseThrow(() -> new EventErrorException(SEAT_NOT_FOUND));
-
-            seat.hold();
-            r.selectEventSeat(seat);
-
-        } catch (ObjectOptimisticLockingFailureException e) {
-            throw new EventErrorException(SEAT_NOT_FOUND);
         } finally {
             // 3. 작업 완료 후 안전하게 Redis 락 해제
             redisLockRepository.unlock(lockKey);
