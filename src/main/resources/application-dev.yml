@@ -1,0 +1,65 @@
+spring:
+  datasource:
+    url: jdbc:mysql://dev-db-host:3306/momentix
+    username: root
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+  data:
+    redis:
+      host: dev-redis-host
+      port: 6379
+  mail:
+    username: ${MAIL_USERNAME:dev-dummy@gmail.com}
+    password: ${MAIL_PASSWORD:dummypassword0000}
+  config:
+    import: optional:file:.env[.properties]
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+jwt:
+  secret: ${JWT_SECRET:devtest_dummy_secret_key_32bytes!!!}
+
+slack:
+  bot-token: ${BOT_TOKEN:xoxb-0000000000000-0000000000000-dummy}
+
+cloud:
+  aws:
+    credentials:
+      accessKey: ${AWS_ACCESS_KEY_ID:AKIADUMMY00000000000}
+      secretKey: ${AWS_SECRET_ACCESS_KEY:dummySecretKey0000000000000000000000000}
+    s3:
+      bucket: ${AWS_BUCKET:momentix-dev-bucket}
+    region:
+      static: ${AWS_REGION:ap-northeast-2}
+    stack:
+      auto: false
+
+naver:
+  client:
+    id: ${NAVER_CLIENT_ID:dummyNaverClientId000000}
+    secret: ${NAVER_CLIENT_SECRET:dummySecret}
+  redirect:
+    uri: ${NAVER_REDIRECT_URI:http://dev-server/auth/sign-in/callback/naver}
+
+kakao:
+  client:
+    id: ${KAKAO_CLIENT_ID:dummyKakaoClientId0000000000000000}
+    secret: ${KAKAO_CLIENT_SECRET:dummyKakaoSecret0000000000000000}
+  redirect:
+    uri: ${KAKAO_REDIRECT_URI:http://dev-server/auth/sign-in/callback/kakao}
+
+elasticsearch:
+  url: ${ELASTICSEARCH_URL:http://dev-elastic-host:9200}
+  apikey: ${ELASTIC_API_KEY:dummy_elastic_api_key}
+search:
+  bootstrap:
+    enabled: true
