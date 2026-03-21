@@ -5,7 +5,6 @@ import com.example.momentix.domain.ticket.entity.Tickets;
 import com.example.momentix.domain.users.entity.Users;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,21 +17,10 @@ import java.util.Optional;
 @Repository
 public interface TicketRepository extends JpaRepository<Tickets, Long> {
 
-    @EntityGraph(attributePaths = {
-            "eventTime", "eventTime.events", "seat", "seat.places", "paymentHistory"
-    })
     List<Tickets> findByUsers_UserIdOrderByTicketIdDesc(Long userId);
 
-    @EntityGraph(attributePaths = {
-            "eventTime", "eventTime.events", "seat", "seat.places", "paymentHistory"
-    })
-    Optional<Tickets> findByTicketIdAndUsers_UserId(Long ticketId, Long userId);
-
     Page<Tickets> findByUsersAndIsDeletedFalse(Users user, Pageable pageable);
-    // 해당 유저가 해당 공연 티켓을 가지고 있는지
-    boolean existsByUsers_UserIdAndEvents_Id(Long userId, Long eventId);
     //----------결제---------
-
     // 결제ID로 링크된 티켓ID 조회
     @Query("select ticke.ticketId from Tickets ticke where ticke.paymentHistory.paymentHistoryId = :paymentId")
     Optional<Long> findIdByPaymentId(@Param("paymentId") Long paymentId);
@@ -56,6 +44,19 @@ public interface TicketRepository extends JpaRepository<Tickets, Long> {
             """)
     int linkPayment(@Param("ticketId") Long ticketId,
                     @Param("paymentHistory") PaymentHistory paymentHistory);
+
+    @Query("""
+    SELECT COUNT(t) > 0
+    FROM Tickets t
+    JOIN EventTimes et ON et.id = t.eventTimeId
+    WHERE t.users.userId = :userId
+    AND et.events.id = :eventId
+    AND t.isDeleted = false
+    """)
+    boolean existsByUserIdAndEventId(
+            @Param("userId") Long userId,
+            @Param("eventId") Long eventId
+    );
 
     //결제 취소
     @Modifying(clearAutomatically = true, flushAutomatically = true)

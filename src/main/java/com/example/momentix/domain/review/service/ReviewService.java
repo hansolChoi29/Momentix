@@ -42,7 +42,7 @@ public class ReviewService {
                 .orElseThrow(() -> new EventErrorException(EVENT_NOT_FOUND));
 
         // TODO: 사용자가 해당 공연을 예매했는지 권한 검증 로직 추가 필요
-        boolean hasPurchased = ticketRepository.existsByUsers_UserIdAndEvents_Id(
+        boolean hasPurchased = ticketRepository.existsByUserIdAndEventId(
                 users.getUserId(), eventId
         );
 
