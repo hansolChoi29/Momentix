@@ -9,6 +9,7 @@ import com.example.momentix.domain.common.util.JwtUtil;
 import com.example.momentix.domain.users.entity.Users;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.momentix.domain.common.exception.auth.AuthErrorException;
 
@@ -18,8 +19,8 @@ import static com.example.momentix.domain.common.exception.auth.AuthErrorCode.*;
 @Service
 @RequiredArgsConstructor
 public class SignInService {
-    private final AuthenticationManager authenticationManager;
     private final SignInRepository signInRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public SignInDto signIn(SignInCommand signInCommand) {
         // TODO : validator 생성 요망
@@ -43,7 +44,11 @@ public class SignInService {
                 user.getUser().getRole()
         );
         String refreshToken = JwtUtil.createRefreshToken(user.getSignInId());
-        return new SignInDto(accessToken, refreshToken);
+
+        return new SignInDto(
+                accessToken,
+                refreshToken
+        );
     }
 
     // 리프레시 엔드포인트

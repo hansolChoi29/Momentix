@@ -69,15 +69,18 @@ public class EmailVerificationService {
         message.setText("인증 코드 " + code + "\n유효시간: " + (codeTtlSec / 60) + "분");
         // 실제 메일 전송(STMP서버 통해 발송)
         mailSender.send(message);
+
         return null;
     }
 
     // 사용자가 제출한 이메일/코드 확인하고 인증 성공 시 1회용 검증 토큰 발생
     public EmailVerifyConfirmDto confirmAndIssueToken(EmailVerifyConfirmCommand command) {
         String saved = redisTemplate.opsForValue().get(codeKey(command.getEmail()));
+
         if (saved == null || !saved.equals(command.getCode())) {
             throw new AuthErrorException(EMAIL_CODE_INVALID);
         }
+
         redisTemplate.delete(codeKey(command.getEmail()));
 
         String token = UUID.randomUUID().toString();
@@ -86,16 +89,19 @@ public class EmailVerificationService {
                 command.getEmail(),
                 Duration.ofSeconds(tokenTtlSec)
         );
+
         return new EmailVerifyConfirmDto(token);
     }
 
     public String consumerVerifiedToken(String token) {
         String key = tokenKey(token);
         String email = redisTemplate.opsForValue().get(key);
+
         if (email == null || email.isBlank()) {
             throw new AuthErrorException(EMAIL_TOKEN_EXPIRED);
         }
         redisTemplate.delete(key);
+
         return email;
     }
 }

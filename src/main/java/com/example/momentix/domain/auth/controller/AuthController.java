@@ -176,6 +176,4 @@ public class AuthController {
 
     public record TokenRes(String accessToken, String refreshToken) {
     }
-
-
 }
