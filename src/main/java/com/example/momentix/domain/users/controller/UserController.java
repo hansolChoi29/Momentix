@@ -45,9 +45,9 @@ public class UserController {
     @GetMapping("/{userId}")
     public ResponseEntity<ReadUserSimpleResponseDto> readUserSimple(
             @PathVariable Long userId,
-            @AuthenticationPrincipal UserDetailsImpl userDetails
+            @AuthenticationPrincipal String email
     ) {
-        ReadUserSimpleResponseDto readUserSimpleResponseDto = userService.readUserSimple(userId, userDetails);
+        ReadUserSimpleResponseDto readUserSimpleResponseDto = userService.readUserSimple(userId, email);
         return new ResponseEntity<>(readUserSimpleResponseDto, HttpStatus.OK);
     }
 }
