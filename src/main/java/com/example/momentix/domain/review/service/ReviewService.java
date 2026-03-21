@@ -31,8 +31,11 @@ public class ReviewService {
     private final EventsRepository eventsRepository;
 
     @Transactional
-    public ReviewResponseDto createReview(Long eventId, CreateReviewRequestDto requestDto, Users users) {
-
+    public ReviewResponseDto createReview(
+            Long eventId,
+            CreateReviewRequestDto requestDto,
+            Users users
+    ) {
         validateRating(requestDto.getRating());
 
         Events event = eventsRepository.findById(eventId)
@@ -42,9 +45,11 @@ public class ReviewService {
         boolean hasPurchased = ticketRepository.existsByUsers_UserIdAndEvents_Id(
                 users.getUserId(), eventId
         );
+
         if (!hasPurchased) {
             throw new ReviewErrorException(REVIEW_NOT_PURCHASED);
         }
+
         Review review = new Review(
                 event,
                 users,
@@ -57,16 +62,21 @@ public class ReviewService {
         return new ReviewResponseDto(savedReview);
     }
 
-    public Page<ReviewResponseDto> getReviews(Long eventId, Pageable pageable) {
-
+    public Page<ReviewResponseDto> getReviews(
+            Long eventId,
+            Pageable pageable
+    ) {
         Page<Review> reviewPage = reviewRepository.findByEvents_IdAndIsDeletedFalse(eventId, pageable);
 
         return reviewPage.map(ReviewResponseDto::new);
     }
 
     @Transactional
-    public void updateReview(Long reviewId, UpdateReviewRequestDto requestDto, Users user) {
-
+    public void updateReview(
+            Long reviewId,
+            UpdateReviewRequestDto requestDto,
+            Users user
+    ) {
         validateRating(requestDto.getRating());
 
         Review review = reviewRepository.findById(reviewId)
@@ -75,7 +85,10 @@ public class ReviewService {
         if (!review.getUsers().getUserId().equals(user.getUserId())) {
             throw new ReviewErrorException(FORBIDDEN);
         }
-        review.update(requestDto.getContents(), requestDto.getRating());
+        review.update(
+                requestDto.getContents(),
+                requestDto.getRating()
+        );
     }
 
     @Transactional

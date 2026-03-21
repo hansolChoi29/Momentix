@@ -115,7 +115,11 @@ public class ReservationService {
 
     // 장소 재선택 - 따로 뺀 이유 : 재선택 하려면 어느 예약을 바꿀지 reservationId가 필요
     @Transactional
-    public ReservationResponseDto reselectEvent(Long userId, Long reservationId, Long eventId) {
+    public ReservationResponseDto reselectEvent(
+            Long userId,
+            Long reservationId,
+            Long eventId
+    ) {
         if (!usersRepository.existsById(userId)) {
             throw new AuthErrorException(NOT_FOUND);
         }
@@ -126,11 +130,11 @@ public class ReservationService {
         }
 
         // 허용 상태만 재선택 가능 (최소한의 체크)
-//        switch (reservations.getReservationStatusType()) {
-//            case DRAFT, SELECT_PLACE, SELECT_TIME, SELECT_SEAT -> {
-//            }
-//            default -> throw new IllegalArgumentException("공연 선택이 불가능합니다.");
-//        }
+        switch (reservations.getReservationStatusType()) {
+            case DRAFT, SELECT_PLACE, SELECT_TIME, SELECT_SEAT -> {
+            }
+            default -> throw new IllegalArgumentException("공연 선택이 불가능합니다.");
+        }
 
         Events event = eventsRepository.findById(eventId)
                 .orElseThrow(() -> new EventErrorException(EVENT_NOT_FOUND));
