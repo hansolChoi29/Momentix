@@ -37,7 +37,11 @@ public class SignInService {
         SignIn user = signInRepository.findByUsername(signInCommand.getUsername())
                 .orElseThrow(() -> new AuthErrorException(NOT_FOUND));
 
-        String accessToken = JwtUtil.createAccessToken(user.getSignInId(), user.getUsername());
+        String accessToken = JwtUtil.createAccessToken(
+                user.getSignInId(),
+                user.getUsername(),
+                user.getUser().getRole()
+        );
         String refreshToken = JwtUtil.createRefreshToken(user.getSignInId());
         return new SignInDto(accessToken, refreshToken);
     }

@@ -113,7 +113,7 @@ public class NaverOAuthService implements OAuthService {
             });
 
             //JWT 발급
-            String accessJwt = JwtUtil.createAccessToken(user.getUserId(), user.getEmail());
+            String accessJwt = JwtUtil.createAccessToken(user.getUserId(), email, user.getRole());
             String refreshJwt = JwtUtil.createRefreshToken(user.getUserId());
 
             return new OAuthSignInResponse(

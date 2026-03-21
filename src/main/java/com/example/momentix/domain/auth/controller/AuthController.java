@@ -106,7 +106,7 @@ public class AuthController {
         String email = signIn.getUsername();
         RoleType role = signIn.getUser().getRole();
 
-        String newAccessToken = JwtUtil.createAccessToken(userId, email);
+        String newAccessToken = JwtUtil.createAccessToken(userId, email, role);
 
         return ResponseEntity.ok(new TokenRes(newAccessToken, null));
     }

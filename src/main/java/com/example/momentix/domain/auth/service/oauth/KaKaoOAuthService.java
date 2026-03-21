@@ -91,7 +91,7 @@ public class KaKaoOAuthService implements OAuthService {
             });
 
             // 4) JWT 발급
-            String accessJwt = JwtUtil.createAccessToken(user.getUserId(), email);
+            String accessJwt = JwtUtil.createAccessToken(user.getUserId(), email, user.getRole());
             String refreshJwt = JwtUtil.createRefreshToken(user.getUserId());
 
             return new OAuthSignInResponse(
