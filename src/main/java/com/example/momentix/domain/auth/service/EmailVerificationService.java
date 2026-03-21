@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import static com.example.momentix.domain.common.exception.auth.AuthErrorCode.*;
 
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -21,10 +22,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
+    private static final SecureRandom secureRandom = new SecureRandom();
     private final StringRedisTemplate redisTemplate;
     private final JavaMailSender mailSender;
-
-
     @Value("${auth.email.code-ttl-sec:300}")// 인증코드 5분(메일로 발송된 6자리 인증코드가 살아 있는 시간)
     private long codeTtlSec;
     @Value("${auth.email.token-ttl-sec:900}")// 900=기본값(인증코드를 올바르게 입력했을 때 서버가 발급하는 “검증 토큰(임시 티켓)”의 유효 시간)
@@ -49,7 +49,7 @@ public class EmailVerificationService {
 
     //인증 코드 발송
     public EmailDto sendCode(EmailCommand command) {
-        String code = String.valueOf((int) (Math.random() * 900000) + 100000); //6자리
+        String code = String.valueOf(secureRandom.nextInt(900000) + 100000);
         //쿨다운
         if (Boolean.TRUE.equals(redisTemplate.hasKey(cooldownKey(command.getEmail())))) {
             throw new AuthErrorException(EMAIL_CODE_REQUEST_TOO_FREQUENT);
