@@ -28,7 +28,7 @@ public class SearchController {
             @ModelAttribute SearchRequestDto searchRequestDto,
             Pageable pageable,
             HttpServletRequest request, // 클라이언트 요청 정보 (IP 등)
-            @AuthenticationPrincipal(expression = "userId") Long userId
+            @AuthenticationPrincipal String email
     ) {
         Page<SearchResponseDto> response = searchService.searchEvent(searchRequestDto, pageable);
 
@@ -38,7 +38,7 @@ public class SearchController {
 
         searchService.logSearchAsync(
                 searchRequestDto,
-                (userId == null) ? null : String.valueOf(userId),
+                email,
                 extractClientIp(request)
         );
 
