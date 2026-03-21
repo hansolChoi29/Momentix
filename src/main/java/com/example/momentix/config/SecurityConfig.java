@@ -72,7 +72,6 @@ public class SecurityConfig {
                                 "HOST")
 
                         // 테스트용 api 주소
-                        .requestMatchers("/test/**").permitAll()
                         .requestMatchers("/error").permitAll()
 
                         // 예약은 CONSUMER만
