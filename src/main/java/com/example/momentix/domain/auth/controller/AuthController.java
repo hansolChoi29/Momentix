@@ -113,25 +113,8 @@ public class AuthController {
 
     @PostMapping("/sign-out")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void signOut(HttpServletResponse res) {
-        ResponseCookie cookie = ResponseCookie.from("ACCESS_TOKEN", "")
-                .path("/")
-                .sameSite("Strict") //CSRF방지
-                .secure(false) // 개발단계에서는 false, 운영은 true
-                .httpOnly(true)
-                .maxAge(0)// 즉시 만료
-                .build();
-        res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-
-        //refreshToken 쿠키 같이 삭제
-        ResponseCookie deleteRefresh = ResponseCookie.from("REFRESH_TOKEN", "")
-                .path("/auth/refresh")
-                .httpOnly(true)
-                .secure(false)
-                .sameSite("Strict")
-                .maxAge(0)
-                .build();
-        signOutService.signOut(res);
+    public void signOut(HttpServletResponse response) {
+        signOutService.signOut(response);
     }
 
     // 다른 헤더로 보냄-필터가 JWT로 착각해서 에러 던짐
