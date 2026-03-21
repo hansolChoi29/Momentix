@@ -5,12 +5,12 @@ Moment + Tix (Tickets) : 특별한 순간을 위한 티켓 예매 서비스
 개발 기간 : 2025.09.01 ~ 2025.10.02 (1개월) | BE 4명
 ## 👥 팀원 소개
 
-| 이름 | 직책 | GitHub | Blog |
-| :---: | :---: | :---: | :---: |
-| 곽지훈 | 팀원 | [Gwakjihun](https://github.com/Gwakjihun) | [rhkrwlgns](https://rhkrwlgns.tistory.com/) |
-| 전재민 | 부팀장 | [Beforejamni](https://github.com/Beforejamni) | [beforejamn1](https://beforejamn1.tistory.com/) |
-| 최재혁 | 팀장 | [Gemini-kei](https://github.com/Gemini-kei) | [keigemini](https://velog.io/@keigemini/posts) |
-| 최한솔 | 서기 | [hansolChoi29](https://github.com/hansolChoi29) | [winwin0219](https://winwin0219.tistory.com/) |
+| 이름 | 직책 |                 담당                  | GitHub | Blog |
+| :---: | :---: |:-----------------------------------:| :---: | :---: |
+| 곽지훈 | 팀원 |         S3, 리뷰, 좌석 선점, 즐겨찾기         | [Gwakjihun](https://github.com/Gwakjihun) | [rhkrwlgns](https://rhkrwlgns.tistory.com/) |
+| 전재민 | 부팀장 |          Slack, 좌석 선택, 티켓           | [Beforejamni](https://github.com/Beforejamni) | [beforejamn1](https://beforejamn1.tistory.com/) |
+| 최재혁 | 팀장 |         공연, 좌석, 기본 검색, 대기열          | [Gemini-kei](https://github.com/Gemini-kei) | [keigemini](https://velog.io/@keigemini/posts) |
+| 최한솔 | 서기 | Auth, Elasticsearch, 포인트, CI/CD | [hansolChoi29](https://github.com/hansolChoi29) | [winwin0219](https://winwin0219.tistory.com/) |
 ---
 
 ## 🛠️ 시스템 아키텍처
