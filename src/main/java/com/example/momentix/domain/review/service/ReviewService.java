@@ -9,6 +9,7 @@ import com.example.momentix.domain.review.dto.request.UpdateReviewRequestDto;
 import com.example.momentix.domain.review.dto.response.ReviewResponseDto;
 import com.example.momentix.domain.review.entity.Review;
 import com.example.momentix.domain.review.repository.ReviewRepository;
+import com.example.momentix.domain.ticket.repository.TicketRepository;
 import com.example.momentix.domain.users.entity.Users;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,7 +24,8 @@ import static com.example.momentix.domain.common.exception.review.ReviewCode.*;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ReviewService {
-
+    // TODO : 예매 안 한 사람도 리뷰 작성 가능한 문제 - 해당 유저가 해당 공연 티켓을 가지고 있는지 확인
+    private final TicketRepository ticketRepository;
     private final ReviewRepository reviewRepository;
     private final EventsRepository eventsRepository;
 
@@ -36,7 +38,12 @@ public class ReviewService {
                 .orElseThrow(() -> new EventErrorException(EVENT_NOT_FOUND));
 
         // TODO: 사용자가 해당 공연을 예매했는지 권한 검증 로직 추가 필요
-
+        boolean hasPurchased = ticketRepository.existsByUsers_UserIdAndEvents_Id(
+                users.getUserId(), eventId
+        );
+        if (!hasPurchased) {
+            throw new ReviewErrorException(REVIEW_NOT_PURCHASED);
+        }
         Review review = new Review(
                 event,
                 users,

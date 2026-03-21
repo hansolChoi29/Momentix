@@ -29,7 +29,8 @@ public interface TicketRepository extends JpaRepository<Tickets, Long> {
     Optional<Tickets> findByTicketIdAndUsers_UserId(Long ticketId, Long userId);
 
     Page<Tickets> findByUsersAndIsDeletedFalse(Users user, Pageable pageable);
-
+    // 해당 유저가 해당 공연 티켓을 가지고 있는지
+    boolean existsByUsers_UserIdAndEvents_Id(Long userId, Long eventId);
     //----------결제---------
 
     // 결제ID로 링크된 티켓ID 조회
