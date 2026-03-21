@@ -20,7 +20,6 @@ import static com.example.momentix.domain.common.exception.auth.AuthErrorCode.*;
 @RequiredArgsConstructor
 public class SignInService {
     private final SignInRepository signInRepository;
-    private final PasswordEncoder passwordEncoder;
 
     public SignInDto signIn(SignInCommand signInCommand) {
         SignIn user = signInRepository.findByUsername(signInCommand.getUsername())
