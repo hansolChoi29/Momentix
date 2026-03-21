@@ -19,7 +19,6 @@ import com.example.momentix.domain.reservation.repository.ReservationRepository;
 import com.example.momentix.domain.users.entity.Users;
 import com.example.momentix.domain.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -44,12 +43,21 @@ public class ReservationService {
     private final EventTimeReserveSeatRepository eventTimeReserveSeatRepository;
     private final RedisLockRepository redisLockRepository;
 
-    @Transactional
-    public ReservationResponseDto selectAll(Long userId, Long eventId, Long eventPlaceId, Long eventTimeId) {
-
-        //이용자와 공연 존재 확인
-        Users user = usersRepository.findById(userId)
+    private Users getUser(String email) {
+        return usersRepository.findBySignIn_Username(email)
                 .orElseThrow(() -> new AuthErrorException(NOT_FOUND));
+    }
+
+    @Transactional
+    public ReservationResponseDto selectAll(
+            String email,
+            Long eventId,
+            Long eventPlaceId,
+            Long eventTimeId
+    ) {
+        Users user = getUser(email);
+        Long userId = user.getUserId();
+        //이용자와 공연 존재 확인
 
         Events event = eventsRepository.findById(eventId)
                 .orElseThrow(() -> new EventErrorException(EVENT_NOT_FOUND));
@@ -85,10 +93,9 @@ public class ReservationService {
 
     //공연 선택
     @Transactional
-    public ReservationResponseDto selectEvent(Long userId, Long eventId) {
-        //이용자와 공연 존재 확인
-        Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new AuthErrorException(NOT_FOUND));
+    public ReservationResponseDto selectEvent(String email, Long eventId) {
+        Users user = getUser(email);
+        Long userId = user.getUserId();
 
         Events event = eventsRepository.findById(eventId)
                 .orElseThrow(() -> new EventErrorException(EVENT_NOT_FOUND));
@@ -147,7 +154,9 @@ public class ReservationService {
 
     //공연 장소 선택하기
     @Transactional
-    public ReservationResponseDto selectEventPlace(Long userId, Long reservationId, Long eventPlaceId) {
+    public ReservationResponseDto selectEventPlace(String email, Long reservationId, Long eventPlaceId) {
+        Users user = getUser(email);
+        Long userId = user.getUserId();
         //사용자 확인
         if (!usersRepository.existsById(userId)) {
             throw new AuthErrorException(NOT_FOUND);
@@ -188,7 +197,10 @@ public class ReservationService {
     }
 
     @Transactional
-    public ReservationResponseDto selectEventTime(Long userId, Long reservationId, Long eventTimeId) {
+    public ReservationResponseDto selectEventTime(String email, Long reservationId, Long eventTimeId) {
+        Users user = getUser(email);
+        Long userId = user.getUserId();
+
         if (!usersRepository.existsById(userId)) {
             throw new AuthErrorException(NOT_FOUND);
         }
@@ -230,7 +242,12 @@ public class ReservationService {
 
     //Propagation.REQUIRED 가 default 지만, 티켓 생성 트랜잭션에 사용할 예정이라 명시
     @Transactional(propagation = Propagation.REQUIRED)
-    public void deleteReservation(Long userId, Long reservationId) {
+    public void deleteReservation(
+            String email,
+            Long reservationId
+    ) {
+        Users user = getUser(email);
+        Long userId = user.getUserId();
         if (!usersRepository.existsById(userId)) {
             throw new AuthErrorException(NOT_FOUND);
         }
@@ -247,8 +264,14 @@ public class ReservationService {
 
     // 좌석 선택 (좌석 상태: AVAILABLE -> HOLD)
     @Transactional
-    public ReservationResponseDto selectEventSeat(Long userId, Long reservationId, Long eventTimeReserveSeatId) {
+    public ReservationResponseDto selectEventSeat(
+            String email,
+            Long reservationId,
+            Long eventTimeReserveSeatId
+    ) {
+        Users user = getUser(email);
 
+        Long userId = user.getUserId();
         // --- 1. 기존 유효성 검증 로직 ---
         if (!usersRepository.existsById(userId)) {
             throw new AuthErrorException(NOT_FOUND);

@@ -1,6 +1,9 @@
 package com.example.momentix.domain.queue;
 
 
+import com.example.momentix.domain.common.exception.auth.AuthErrorCode;
+import com.example.momentix.domain.common.exception.auth.AuthErrorException;
+import com.example.momentix.domain.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.boot.model.naming.IllegalIdentifierException;
@@ -20,7 +23,7 @@ public class QueueService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final QueueRegisterStreamService queueRegisterStreamService;
-
+    private final UserRepository userRepository;
     /**
      *
      */
@@ -34,6 +37,11 @@ public class QueueService {
     private final String streamKey = "stream:";
     // UUID 값 토큰으로 관리
 
+    private Long getUserId(String email) {
+        return userRepository.findBySignIn_Username(email)
+                .orElseThrow(() -> new AuthErrorException(AuthErrorCode.NOT_FOUND))
+                .getUserId();
+    }
     /**
      * Allowed 상태 유저 수 count
      *
@@ -70,11 +78,12 @@ public class QueueService {
      * 예매하기 버튼 클릭시
      * 대기열 등록
      *
-     * @param userId    유저 ID
+     * @param email    유저 ID
      * @param sessionId 유저 세션 ID
      * @param eventId   공연 ID
      */
-    public String addQueue(Long userId, String sessionId, Long eventId) {
+    public String addQueue(String email, String sessionId, Long eventId) {
+        Long userId = getUserId(email);
         // 기존에 이 공연 대기열에 등록된 유저(Id)면 등록 안함
         eventList(eventId);
         if (Boolean.TRUE.equals(redisTemplate.hasKey(userToTokenKey + eventId + ":" + userId))) {

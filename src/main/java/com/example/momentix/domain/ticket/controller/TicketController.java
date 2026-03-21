@@ -1,6 +1,5 @@
 package com.example.momentix.domain.ticket.controller;
 
-import com.example.momentix.domain.auth.impl.UserDetailsImpl;
 import com.example.momentix.domain.ticket.dto.request.CreateTicketRequestDto;
 import com.example.momentix.domain.ticket.dto.request.UpdateTicketStatusRequestDto;
 import com.example.momentix.domain.ticket.dto.response.TicketResponseDto;
@@ -29,19 +28,19 @@ public class TicketController {
 
     @GetMapping("/tickets")
     public ResponseEntity<Page<TicketResponseDto>> getMyTickets(
-            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @AuthenticationPrincipal String email,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<TicketResponseDto> response = ticketService.getMyTickets(userDetails.getUser(), pageable);
+        Page<TicketResponseDto> response = ticketService.getMyTickets(email, pageable);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/tickets/{ticketId}")
     public ResponseEntity<TicketResponseDto> getTicket(
             @PathVariable Long ticketId,
-            @AuthenticationPrincipal UserDetailsImpl userDetails
-    ) {
-        TicketResponseDto response = ticketService.getTicket(ticketId, userDetails.getUser());
+            @AuthenticationPrincipal String email
+            ) {
+        TicketResponseDto response = ticketService.getTicket(ticketId, email);
         return ResponseEntity.ok(response);
     }
 
@@ -49,18 +48,18 @@ public class TicketController {
     public ResponseEntity<String> updateTicketStatus(
             @PathVariable Long ticketId,
             @RequestBody UpdateTicketStatusRequestDto requestDto,
-            @AuthenticationPrincipal UserDetailsImpl userDetails
-    ) {
-        ticketService.updateTicketStatus(ticketId, requestDto, userDetails.getUser());
+            @AuthenticationPrincipal String email
+            ) {
+        ticketService.updateTicketStatus(ticketId, requestDto, email);
         return ResponseEntity.ok("예매 상태가 성공적으로 변경되었습니다.");
     }
 
     @DeleteMapping("/tickets/{ticketId}")
     public ResponseEntity<Void> deleteTicket(
             @PathVariable Long ticketId,
-            @AuthenticationPrincipal UserDetailsImpl userDetails
-    ) {
-        ticketService.softDeleteTicketByAdmin(ticketId, userDetails.getUser());
+            @AuthenticationPrincipal String email
+            ) {
+        ticketService.softDeleteTicketByAdmin(ticketId, email);
         return ResponseEntity.noContent().build();
     }
 

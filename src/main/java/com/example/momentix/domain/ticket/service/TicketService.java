@@ -11,6 +11,7 @@ import com.example.momentix.domain.ticket.entity.TicketStatusType;
 import com.example.momentix.domain.ticket.entity.Tickets;
 import com.example.momentix.domain.ticket.repository.TicketRepository;
 import com.example.momentix.domain.users.entity.Users;
+import com.example.momentix.domain.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,13 +27,17 @@ import static com.example.momentix.domain.common.exception.ticket.TicketCode.*;
 @Service
 @RequiredArgsConstructor
 public class TicketService {
-
+    private final UserRepository userRepository;
     private final TicketRepository ticketRepository;
     private final ReservationRepository reservationRepository;
 
+    private Users getUser(String email) {
+        return userRepository.findBySignIn_Username(email)
+                .orElseThrow(() -> new TicketErrorException(FORBIDDEN));
+    }
+
     @Transactional
     public TicketResponseDto createTicket(CreateTicketRequestDto requestDto) {
-
         // 1. reservationId로 임시 예매 정보 조회
         Reservations reservation = reservationRepository.findById(requestDto.getReservationId())
                 .orElseThrow(() -> new TicketErrorException(RESERVATION_NOT_FOUND));
@@ -59,16 +64,22 @@ public class TicketService {
     }
 
     // 내 티켓 내역 전체 조회
-    public Page<TicketResponseDto> getMyTickets(Users user, Pageable pageable) {
-
+    public Page<TicketResponseDto> getMyTickets(
+            String email,
+            Pageable pageable
+    ) {
+        Users user = getUser(email);
         Page<Tickets> ticketPage = ticketRepository.findByUsersAndIsDeletedFalse(user, pageable);
 
         return ticketPage.map(TicketResponseDto::new);
     }
 
     // 내 티켓 내역 단건 조회
-    public TicketResponseDto getTicket(Long ticketId, Users user) {
-
+    public TicketResponseDto getTicket(
+            Long ticketId,
+            String email
+    ) {
+        Users user = getUser(email);
         Tickets ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new TicketErrorException(RESERVATION_NOT_FOUND));
 
@@ -82,8 +93,12 @@ public class TicketService {
 
     // 티켓 결제 취소
     @Transactional
-    public void updateTicketStatus(Long ticketId, UpdateTicketStatusRequestDto requestDto, Users user) {
-
+    public void updateTicketStatus(
+            Long ticketId,
+            UpdateTicketStatusRequestDto requestDto,
+            String email
+    ) {
+        Users user = getUser(email);
         Tickets ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new TicketErrorException(RESERVATION_NOT_FOUND));
 
@@ -101,8 +116,11 @@ public class TicketService {
 
     // 티켓 내역 삭제
     @Transactional
-    public void softDeleteTicketByAdmin(Long ticketId, Users adminUser) {
-
+    public void softDeleteTicketByAdmin(
+            Long ticketId,
+            String email
+    ) {
+        Users adminUser  = getUser(email);
         // 요청한 사용자가 ADMIN인지 확인
         if (adminUser.getRole() != RoleType.ADMIN) {
             throw new TicketErrorException(FORBIDDEN);

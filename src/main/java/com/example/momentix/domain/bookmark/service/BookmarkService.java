@@ -3,30 +3,42 @@ package com.example.momentix.domain.bookmark.service;
 import com.example.momentix.domain.bookmark.dto.response.BookmarkResponseDto;
 import com.example.momentix.domain.bookmark.entity.Bookmark;
 import com.example.momentix.domain.bookmark.repository.BookmarkRepository;
+import com.example.momentix.domain.common.exception.auth.AuthErrorCode;
+import com.example.momentix.domain.common.exception.auth.AuthErrorException;
 import com.example.momentix.domain.common.exception.event.EventErrorException;
 import com.example.momentix.domain.events.entity.Events;
 import com.example.momentix.domain.events.entity.eventimages.EventImages;
 import com.example.momentix.domain.events.repository.EventsRepository;
 import com.example.momentix.domain.events.repository.eventimages.EventImagesRepository;
 import com.example.momentix.domain.users.entity.Users;
+import com.example.momentix.domain.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import static com.example.momentix.domain.common.exception.event.EventErrorCode.*;
+import static org.springframework.messaging.simp.SimpMessageHeaderAccessor.getUser;
+
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class BookmarkService {
-
     private final BookmarkRepository bookmarkRepository;
     private final EventsRepository eventsRepository;
     private final EventImagesRepository eventImagesRepository;
+    private final UserRepository userRepository;
+
+    private Users getUser(String email) {
+        return userRepository.findBySignIn_Username(email)
+                .orElseThrow(() -> new AuthErrorException(AuthErrorCode.NOT_FOUND));
+    }
 
     @Transactional
-    public boolean toggleBookmark(Long eventId, Users user) {
+    public boolean toggleBookmark(Long eventId, String email) {
+        Users user = getUser(email);
         Events event = eventsRepository.findById(eventId)
                 .orElseThrow(() -> new EventErrorException(NOT_EVENT));
 
@@ -46,8 +58,8 @@ public class BookmarkService {
         }
     }
 
-    public Page<BookmarkResponseDto> getMyBookmarks(Users user, Pageable pageable) {
-
+    public Page<BookmarkResponseDto> getMyBookmarks(String email, Pageable pageable) {
+        Users user = getUser(email);
         Page<Bookmark> bookmarkPage = bookmarkRepository.findByUsersAndBookmarkStatusTrue(user, pageable);
 
         // Page<Bookmark>를 Page<BookmarkResponseDto>로 변환하는 로직을 수정합니다.

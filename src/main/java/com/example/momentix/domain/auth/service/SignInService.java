@@ -43,4 +43,25 @@ public class SignInService {
         return signInRepository.findById(userId)
                 .orElseThrow(() -> new AuthErrorException(NOT_FOUND));
     }
+
+    public SignInDto refresh(String refreshToken) {
+        if (!JwtUtil.validateToken(refreshToken) || !JwtUtil.isRefreshToken(refreshToken)) {
+            throw new AuthErrorException(UNAUTHORIZED);
+        }
+
+        Long userId = JwtUtil.getUserIdFromToken(refreshToken);
+        if (userId == null) {
+            throw new AuthErrorException(UNAUTHORIZED);
+        }
+
+        SignIn signIn = signInRepository.findById(userId)
+                .orElseThrow(() -> new AuthErrorException(NOT_FOUND));
+
+        String newAccessToken = JwtUtil.createAccessToken(
+                userId,
+                signIn.getUsername(),
+                signIn.getUser().getRole()
+        );
+        return new SignInDto(newAccessToken, null);
+    }
 }

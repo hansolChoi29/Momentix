@@ -67,7 +67,6 @@ public class OAuthController {
                 .queryParam("redirect_uri", kakaoRedirectUri)
                 .queryParam("state", state)
                 .queryParam("scope", "profile_nickname account_email")//요청할 사용자 정보 범위
-//                .queryParam("prompt", "consent")//test용
                 .encode()//지금까지 만든 URL을 인코딩
                 .build()
                 .toUri();

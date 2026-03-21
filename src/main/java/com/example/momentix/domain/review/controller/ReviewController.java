@@ -1,6 +1,5 @@
 package com.example.momentix.domain.review.controller;
 
-import com.example.momentix.domain.auth.impl.UserDetailsImpl;
 import com.example.momentix.domain.review.dto.request.CreateReviewRequestDto;
 import com.example.momentix.domain.review.dto.request.UpdateReviewRequestDto;
 import com.example.momentix.domain.review.dto.response.ReviewResponseDto;
@@ -26,9 +25,13 @@ public class ReviewController {
     public ResponseEntity<ReviewResponseDto> createReview(
             @PathVariable Long eventId,
             @RequestBody CreateReviewRequestDto requestDto,
-            @AuthenticationPrincipal UserDetailsImpl userDetails
+            @AuthenticationPrincipal String email
     ) {
-        ReviewResponseDto response = reviewService.createReview(eventId, requestDto, userDetails.getUser());
+        ReviewResponseDto response = reviewService.createReview(
+                eventId,
+                requestDto,
+                email
+        );
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -45,19 +48,25 @@ public class ReviewController {
     public ResponseEntity<String> updateReview(
             @PathVariable Long reviewId,
             @Valid @RequestBody UpdateReviewRequestDto requestDto,
-            @AuthenticationPrincipal UserDetailsImpl userDetails
+            @AuthenticationPrincipal String email
     ) {
-        reviewService.updateReview(reviewId, requestDto, userDetails.getUser());
+        reviewService.updateReview(
+                reviewId,
+                requestDto,
+                email
+        );
         return ResponseEntity.ok("리뷰가 성공적으로 수정되었습니다.");
     }
 
     @DeleteMapping("/{reviewId}/events/{eventId}")
     public ResponseEntity<String> deleteReview(
             @PathVariable Long reviewId,
-            @AuthenticationPrincipal UserDetailsImpl userDetails
+            @AuthenticationPrincipal String email
     ) {
-        reviewService.deleteReview(reviewId, userDetails.getUser());
+        reviewService.deleteReview(
+                reviewId,
+                email
+        );
         return ResponseEntity.ok("리뷰가 성공적으로 삭제되었습니다.");
     }
-
 }

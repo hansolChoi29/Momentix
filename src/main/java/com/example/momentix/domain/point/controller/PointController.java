@@ -1,7 +1,6 @@
 package com.example.momentix.domain.point.controller;
 
 
-import com.example.momentix.domain.auth.impl.UserDetailsImpl;
 import com.example.momentix.domain.paymenthistory.entity.PaymentStatusType;
 import com.example.momentix.domain.point.dto.PaymentByPaymentRequest;
 import com.example.momentix.domain.point.dto.PaymentEarnByPaymentRequest;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping("/users/points")
 public class PointController {
-
     private final PointService pointService;
 
     public PointController(PointService pointService) {
@@ -27,43 +25,62 @@ public class PointController {
 
     // 내 포인트 조회
     @GetMapping("/me")
-    public ResponseEntity<PointBalanceResponse> me(@AuthenticationPrincipal UserDetailsImpl user) {
-        return ResponseEntity.ok(pointService.getMyPoints(user.getUserId()));
+    public ResponseEntity<PointBalanceResponse> me(@AuthenticationPrincipal String email) {
+        return ResponseEntity.ok(pointService.getMyPoints(email));
     }
 
     @PostMapping("/pending/earn-by-payment")
     public ResponseEntity<PointBalanceResponse> earnPendingByPayment(
-            @AuthenticationPrincipal UserDetailsImpl user,
+            @AuthenticationPrincipal String email,
             @RequestBody PaymentEarnByPaymentRequest paymentEarnByPaymentRequest
     ) {
-        return ResponseEntity.ok(pointService.earnPendingByPaymentAmount(user.getUserId(), paymentEarnByPaymentRequest.getIdempotencyKey(),
-                paymentEarnByPaymentRequest.getPaymentId(), paymentEarnByPaymentRequest.getReservationId(), paymentEarnByPaymentRequest.getDiscountedAmount(), "결제 적립 예정(3%)", PaymentStatusType.SUCCESS));
+        return ResponseEntity.ok(pointService.earnPendingByPaymentAmount(
+                email,
+                paymentEarnByPaymentRequest.getIdempotencyKey(),
+                paymentEarnByPaymentRequest.getPaymentId(),
+                paymentEarnByPaymentRequest.getReservationId(),
+                paymentEarnByPaymentRequest.getDiscountedAmount(),
+                "결제 적립 예정(3%)",
+                PaymentStatusType.SUCCESS)
+        );
     }
 
     @PostMapping("/pending/release-by-payment")
     public ResponseEntity<PointBalanceResponse> releasePendingByPayment(
-            @AuthenticationPrincipal UserDetailsImpl user,
+            @AuthenticationPrincipal String email,
             @RequestBody PaymentByPaymentRequest paymentByPaymentRequest
     ) {
-        return ResponseEntity.ok(pointService.releasePendingByPayment(user.getUserId(), paymentByPaymentRequest.getIdempotencyKey(),
-                paymentByPaymentRequest.getPaymentId(), "환불 불가 시점 적립 확정"));
+        return ResponseEntity.ok(pointService.releasePendingByPayment(
+                email,
+                paymentByPaymentRequest.getIdempotencyKey(),
+                paymentByPaymentRequest.getPaymentId(),
+                "환불 불가 시점 적립 확정")
+        );
     }
 
     @PostMapping("/pending/cancel-by-payment")
     public ResponseEntity<PointBalanceResponse> cancelPendingByPayment(
-            @AuthenticationPrincipal UserDetailsImpl user,
+            @AuthenticationPrincipal String email,
             @RequestBody PaymentByPaymentRequest paymentByPaymentRequest
     ) {
-        return ResponseEntity.ok(pointService.cancelPendingForPayment(user.getUserId(), paymentByPaymentRequest.getIdempotencyKey(),
-                paymentByPaymentRequest.getPaymentId(), "결제 취소로 적립 예정 취소"));
+        return ResponseEntity.ok(pointService.cancelPendingForPayment(
+                email,
+                paymentByPaymentRequest.getIdempotencyKey(),
+                paymentByPaymentRequest.getPaymentId(),
+                "결제 취소로 적립 예정 취소")
+        );
     }
 
     @PostMapping("/refund-used-by-payment")
     public ResponseEntity<PointBalanceResponse> refundUsedByPayment(
-            @AuthenticationPrincipal UserDetailsImpl user,
+            @AuthenticationPrincipal String email,
             @RequestBody PaymentByPaymentRequest paymentByPaymentRequest
     ) {
-        return ResponseEntity.ok(pointService.refundUsedPointsForPayment(user.getUserId(), paymentByPaymentRequest.getIdempotencyKey(),
-                paymentByPaymentRequest.getPaymentId(), "결제 취소로 포인트 사용 환급"));
+        return ResponseEntity.ok(pointService.refundUsedPointsForPayment(
+                email,
+                paymentByPaymentRequest.getIdempotencyKey(),
+                paymentByPaymentRequest.getPaymentId(),
+                "결제 취소로 포인트 사용 환급")
+        );
     }
 }

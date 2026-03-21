@@ -2,7 +2,6 @@ package com.example.momentix.domain.users.service;
 
 import com.example.momentix.domain.auth.entity.RoleType;
 import com.example.momentix.domain.auth.entity.SignIn;
-import com.example.momentix.domain.auth.impl.UserDetailsImpl;
 import com.example.momentix.domain.auth.repository.SignInRepository;
 import com.example.momentix.domain.common.exception.auth.AuthErrorException;
 import com.example.momentix.domain.common.exception.users.UsersErrorException;

@@ -1,6 +1,5 @@
 package com.example.momentix.domain.queue;
 
-import com.example.momentix.domain.auth.impl.UserDetailsImpl;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,15 +16,18 @@ public class QueueController {
 
     @PostMapping("/{eventId}")
     public ResponseEntity<String> addQueue(
-            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @AuthenticationPrincipal String email,
             @PathVariable Long eventId,
             HttpSession session) {
-        String token = queueService.addQueue(userDetails.getUserId(), session.getId(), eventId);
+        String token = queueService.addQueue(email, session.getId(), eventId);
         return ResponseEntity.ok("예매 가능/대기 상태로 진입" + token);
     }
 
     @PostMapping("/rank/{eventId}")
-    public ResponseEntity<String> rankQueue(@PathVariable Long eventId, @RequestParam String token) {
+    public ResponseEntity<String> rankQueue(
+            @PathVariable Long eventId,
+            @RequestParam String token
+    ) {
         queueService.rankAlarmQueue(eventId, token);
         return ResponseEntity.ok("대기열 순위 확인");
     }
@@ -37,7 +39,10 @@ public class QueueController {
     }
 
     @PostMapping("/end/{eventId}")
-    public ResponseEntity<String> endQueue(@PathVariable Long eventId, @RequestParam String token) {
+    public ResponseEntity<String> endQueue(
+            @PathVariable Long eventId,
+            @RequestParam String token
+    ) {
         queueService.completeQueue(eventId, token);
         return ResponseEntity.ok("예매 완료, 대기열에서 삭제");
     }

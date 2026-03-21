@@ -7,14 +7,11 @@ import com.example.momentix.domain.auth.dto.command.SignInCommand;
 import com.example.momentix.domain.auth.dto.request.EmailVerifyRequest;
 import com.example.momentix.domain.auth.dto.request.SignUpRequest;
 import com.example.momentix.domain.auth.dto.response.SignUpResponse;
-import com.example.momentix.domain.auth.entity.RoleType;
-import com.example.momentix.domain.auth.entity.SignIn;
 import com.example.momentix.domain.auth.service.EmailVerificationService;
 import com.example.momentix.domain.auth.service.SignInService;
 import com.example.momentix.domain.auth.service.SignOutService;
 import com.example.momentix.domain.auth.service.SignUpService;
 import com.example.momentix.domain.common.response.ApiResponse;
-import com.example.momentix.domain.common.util.JwtUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -38,8 +35,9 @@ public class AuthController {
     private final SignOutService signOutService;
 
     @PostMapping("/sign-in")
-    public ResponseEntity<ApiResponse<String>> signIn(@RequestBody SignInRequest signInRequest) {
-
+    public ResponseEntity<ApiResponse<String>> signIn(
+            @RequestBody SignInRequest signInRequest
+    ) {
         SignInCommand signin = new SignInCommand(
                 signInRequest.getUsername(),
                 signInRequest.getPassword()
@@ -53,11 +51,7 @@ public class AuthController {
                 .path("/auth/refresh")
                 .maxAge(Duration.ofDays(7))
                 .build();
-        // 로그인 할 때 요청 값: username, password
-        // 클라이언트 -> 컨틀럴로 : request : username, password
-        // 컨트롤러 -> 서비스 : command : username, password
-        // 서비스 -> 컨트롤러 : Dto : accessToken
-        // 컨틀로러 -> 클라이언트 : response : accessToken
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(ApiResponse.ok(tokens.getAccessToken(), "로그인!"));
@@ -65,26 +59,29 @@ public class AuthController {
 
     //이메일 인증(회원가입 전 단계 - consumer)
     @PostMapping("/sign-up/email-verification")
-    public ResponseEntity<ApiResponse<Object>> requestEmailCode(@RequestBody EmailVerifyRequest request) {
+    public ResponseEntity<ApiResponse<Object>> requestEmailCode(
+            @RequestBody EmailVerifyRequest request
+    ) {
         EmailCommand command = new EmailCommand(request.getEmail());
         emailVerificationService.sendCode(command);
+
         return ResponseEntity.ok(ApiResponse.ok(null, "인증 코드를 확인해 주세요."));
     }
 
     // 코드확인 및 검증 토큰 발급
     @PostMapping("/sign-up-verify/email-verification")
     public ResponseEntity<ApiResponse<EmailVerifyConfirmResponse>> confirmEmailCode(
-            @RequestBody EmailVerifyConfirm request) {
+            @RequestBody EmailVerifyConfirm request
+    ) {
         EmailVerifyConfirmCommand command = new EmailVerifyConfirmCommand(
                 request.getEmail(), request.getCode()
         );
         EmailVerifyConfirmDto token = emailVerificationService.confirmAndIssueToken(command);
         EmailVerifyConfirmResponse response = new EmailVerifyConfirmResponse(token.getToken());
+
         return ResponseEntity.ok(ApiResponse.ok(response, "인증코드"));
     }
 
-
-    // 만료(혹은 곧 만료)된 Access Token 대신 새 Access Token을 발급해 주는 엔드포인트
     @PostMapping("/refresh")
     public ResponseEntity<TokenRes> refresh(
             @CookieValue(value = "REFRESH_TOKEN", required = false) String refreshToken
@@ -93,31 +90,19 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        if (!JwtUtil.validateToken(refreshToken) || !JwtUtil.isRefreshToken(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        SignInDto result = signInService.refresh(refreshToken);
 
-        Long userId = JwtUtil.getUserIdFromToken(refreshToken);
-        if (userId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        SignIn signIn = signInService.loadByUserId(userId);
-        String email = signIn.getUsername();
-        RoleType role = signIn.getUser().getRole();
-
-        String newAccessToken = JwtUtil.createAccessToken(userId, email, role);
-
-        return ResponseEntity.ok(new TokenRes(newAccessToken, null));
+        return ResponseEntity.ok(new TokenRes(result.getAccessToken(), null));
     }
 
     @PostMapping("/sign-out")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void signOut(HttpServletResponse response) {
+    public void signOut(
+            HttpServletResponse response
+    ) {
         signOutService.signOut(response);
     }
 
-    // 다른 헤더로 보냄-필터가 JWT로 착각해서 에러 던짐
     @PostMapping("/sign-up/user")
     public ResponseEntity<SignUpResponse> signUpUser(
             @Validated(SignUpRequest.UserSignUp.class) @RequestBody SignUpRequest req,
@@ -128,6 +113,7 @@ public class AuthController {
         String email = emailVerificationService.consumerVerifiedToken(token); // Redis에서 email 복구
 
         Long userId = signUpService.signUpUser(email, req);
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new SignUpResponse("회원가입 성공", userId));
     }
@@ -136,7 +122,6 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> signUpHost(
             @Validated(SignUpRequest.HostSignUp.class)
             @RequestBody SignUpRequest req) {
-
         Map<String, String> creds = signUpService.signUpHost(req);
 
         Map<String, String> body = new HashMap<>();
@@ -147,7 +132,9 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
 
-    private String extractBearer(String authHeader) {
+    private String extractBearer(
+            String authHeader
+    ) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
         }

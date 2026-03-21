@@ -1,5 +1,7 @@
 package com.example.momentix.domain.paymenthistory.service;
 
+import com.example.momentix.domain.common.exception.auth.AuthErrorCode;
+import com.example.momentix.domain.common.exception.auth.AuthErrorException;
 import com.example.momentix.domain.paymenthistory.dto.PaymentConfirmRequest;
 import com.example.momentix.domain.paymenthistory.dto.PaymentCreateRequest;
 import com.example.momentix.domain.paymenthistory.dto.PaymentResponse;
@@ -15,6 +17,7 @@ import com.example.momentix.domain.ticket.dto.response.TicketResponseDto;
 import com.example.momentix.domain.ticket.entity.Tickets;
 import com.example.momentix.domain.ticket.repository.TicketRepository;
 import com.example.momentix.domain.ticket.service.TicketService;
+import com.example.momentix.domain.users.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.momentix.domain.common.exception.reservation.ReservationErrorException;
@@ -36,13 +39,16 @@ public class PaymentHistoryService {
     private final TicketRepository ticketRepository;
     private final PointService pointService;
     private final QueueService queueService;
+    private final UserRepository userRepository;
 
     public PaymentHistoryService(
             PaymentHistoryRepository paymentHistoryRepository,
             ReservationRepository reservationRepository,
             TicketRepository ticketRepository,
             TicketService ticketService,
-            PointService pointService, QueueService queueService
+            PointService pointService,
+            QueueService queueService,
+            UserRepository userRepository
     ) {
         this.paymentHistoryRepository = paymentHistoryRepository;
         this.reservationRepository = reservationRepository;
@@ -50,15 +56,25 @@ public class PaymentHistoryService {
         this.ticketRepository = ticketRepository;
         this.pointService = pointService;
         this.queueService = queueService;
+        this.userRepository = userRepository;
     }
 
-    // 결제 생성(PENDING) - 상태만 관리하는 결제 + FK 주인(티켓)
-    //idempotencyKey가 같으면 항상 같은 결과를 반환(중복 생성 방지)
-    //(reservationId, status) UNIQUE로 동일 예약의 PENDING 2개 생성 불가
+    private Long getUserId(String email) {
+        return userRepository.findBySignIn_Username(email)
+                .orElseThrow(() -> new AuthErrorException(AuthErrorCode.NOT_FOUND))
+                .getUserId();
+    }
+
     @Transactional
-    public PaymentResponse create(Long userId, PaymentCreateRequest paymentCreateRequest) {
+    public PaymentResponse create(
+            String email,
+            PaymentCreateRequest paymentCreateRequest
+    ) {
+        Long userId = getUserId(email);
+
         Reservations reservation = reservationRepository.findById(paymentCreateRequest.getReservationId())
                 .orElseThrow(() -> new ReservationErrorException(NO_RESERVATION));
+
         if (!reservation.getUsers().getUserId().equals(userId)) {
             throw new ReservationErrorException(NO_MY_RESERVATION);
         }
@@ -80,7 +96,12 @@ public class PaymentHistoryService {
 
     // 결제 확정 (비관적 락 + 멱등)
     @Transactional
-    public PaymentResponse confirm(Long userId, Long paymentId, PaymentConfirmRequest paymentConfirmRequest) {
+    public PaymentResponse confirm(
+            String email,
+            Long paymentId,
+            PaymentConfirmRequest paymentConfirmRequest
+    ) {
+        Long userId = getUserId(email);
         PaymentHistory paymentHistory = paymentHistoryRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentHistoryErrorException(PAYMENT_NOT_FOUND));
 
@@ -112,8 +133,7 @@ public class PaymentHistoryService {
         if (linkedTicketIdOpt.isPresent()) {
             if (paymentHistory.getPaymentStatusType() == PaymentStatusType.PENDING) {
                 paymentHistory.markSuccess();
-                triggerPointPending(userId, paymentHistory, paymentHistory.getPaymentStatusType()); // 멱등키 덕분에 중복 호출
-                // 시 무해
+                triggerPointPending(userId, paymentHistory, paymentHistory.getPaymentStatusType());
             }
             return PaymentResponse.of(paymentHistory);
         }
@@ -152,7 +172,8 @@ public class PaymentHistoryService {
 
     // 결제 취소 (비관적 락)
     @Transactional
-    public PaymentResponse cancel(Long userId, Long paymentId) {
+    public PaymentResponse cancel(String email, Long paymentId) {
+        Long userId = getUserId(email);
         PaymentHistory paymentHistory = paymentHistoryRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentHistoryErrorException(PAYMENT_NOT_FOUND));
 
@@ -190,7 +211,7 @@ public class PaymentHistoryService {
             // (A) 이 결제로 쌓인 적립 예정 포인트는 취소
             String cancelPendingIdemKey = "PAY-" + paymentHistory.getPaymentHistoryId() + "-PEND-CANCEL";
             pointService.cancelPendingForPayment(
-                    userId,
+                    email,
                     cancelPendingIdemKey,
                     paymentHistory.getPaymentHistoryId(),
                     "결제 취소로 적립 예정 취소"
@@ -199,7 +220,7 @@ public class PaymentHistoryService {
             // (B) 이 결제로 사용했던 포인트가 있으면 환급
             String refundUseIdemKey = "PAY-" + paymentHistory.getPaymentHistoryId() + "-REFUND-USE";
             pointService.refundUsedPointsForPayment(
-                    userId,
+                    email,
                     refundUseIdemKey,
                     paymentHistory.getPaymentHistoryId(),
                     "결제 취소로 포인트 사용 환급"
@@ -215,7 +236,8 @@ public class PaymentHistoryService {
 
     //단건조회
     @Transactional
-    public PaymentResponse getOne(Long userId, Long paymentId) {
+    public PaymentResponse getOne(String email, Long paymentId) {
+        Long userId = getUserId(email);
         PaymentHistory paymentHistory = paymentHistoryRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentHistoryErrorException(PAYMENT_NOT_FOUND));
 

@@ -12,6 +12,7 @@ import com.example.momentix.domain.review.entity.Review;
 import com.example.momentix.domain.review.repository.ReviewRepository;
 import com.example.momentix.domain.ticket.repository.TicketRepository;
 import com.example.momentix.domain.users.entity.Users;
+import com.example.momentix.domain.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,13 +29,20 @@ public class ReviewService {
     private final TicketRepository ticketRepository;
     private final ReviewRepository reviewRepository;
     private final EventsRepository eventsRepository;
+    private final UserRepository userRepository;
+
+    private Users getUser(String email) {
+        return userRepository.findBySignIn_Username(email)
+                .orElseThrow(() -> new ReviewErrorException(FORBIDDEN));
+    }
 
     @Transactional
     public ReviewResponseDto createReview(
             Long eventId,
             CreateReviewRequestDto requestDto,
-            Users users
+            String email
     ) {
+        Users users = getUser(email);
         validateRating(requestDto.getRating());
 
         Events event = eventsRepository.findById(eventId)
@@ -73,14 +81,15 @@ public class ReviewService {
     public void updateReview(
             Long reviewId,
             UpdateReviewRequestDto requestDto,
-            Users user
+            String email
     ) {
+        Users users = getUser(email);
         validateRating(requestDto.getRating());
 
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ReviewErrorException(REVIEW_NOT_FOUND));
 
-        if (!review.getUsers().getUserId().equals(user.getUserId())) {
+        if (!review.getUsers().getUserId().equals(users.getUserId())) {
             throw new ReviewErrorException(FORBIDDEN);
         }
         review.update(
@@ -92,12 +101,13 @@ public class ReviewService {
     @Transactional
     public void deleteReview(
             Long reviewId,
-            Users user
+            String email
     ) {
+        Users users = getUser(email);
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ReviewErrorException(REVIEW_NOT_FOUND));
-        boolean isAdmin = user.getRole() == RoleType.ADMIN;
-        boolean isOwner = review.getUsers().getUserId().equals(user.getUserId());
+        boolean isAdmin = users.getRole() == RoleType.ADMIN;
+        boolean isOwner = review.getUsers().getUserId().equals(users.getUserId());
 
         if (!isAdmin && !isOwner) {
             throw new ReviewErrorException(REVIEW_NOT_AUTHORIZED);
