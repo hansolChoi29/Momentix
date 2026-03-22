@@ -1,6 +1,9 @@
 package com.example.momentix.domain.queue;
 
 
+import com.example.momentix.domain.common.exception.auth.AuthErrorCode;
+import com.example.momentix.domain.common.exception.auth.AuthErrorException;
+import com.example.momentix.domain.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.boot.model.naming.IllegalIdentifierException;
@@ -16,14 +19,9 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 public class QueueService {
-
-
     private final RedisTemplate<String, String> redisTemplate;
     private final QueueRegisterStreamService queueRegisterStreamService;
-
-    /**
-     *
-     */
+    private final UserRepository userRepository;
     private final String allowKey = "allow:";
     private final String userToTokenKey = "user";
     private final String sessionToTokenKey = "session";
@@ -33,6 +31,12 @@ public class QueueService {
     private final String tokenKey = "token:";
     private final String streamKey = "stream:";
     // UUID 값 토큰으로 관리
+
+    private Long getUserId(String email) {
+        return userRepository.findBySignIn_Username(email)
+                .orElseThrow(() -> new AuthErrorException(AuthErrorCode.NOT_FOUND))
+                .getUserId();
+    }
 
     /**
      * Allowed 상태 유저 수 count
@@ -70,11 +74,12 @@ public class QueueService {
      * 예매하기 버튼 클릭시
      * 대기열 등록
      *
-     * @param userId    유저 ID
+     * @param email     유저 ID
      * @param sessionId 유저 세션 ID
      * @param eventId   공연 ID
      */
-    public String addQueue(Long userId, String sessionId, Long eventId) {
+    public String addQueue(String email, String sessionId, Long eventId) {
+        Long userId = getUserId(email);
         // 기존에 이 공연 대기열에 등록된 유저(Id)면 등록 안함
         eventList(eventId);
         if (Boolean.TRUE.equals(redisTemplate.hasKey(userToTokenKey + eventId + ":" + userId))) {
@@ -99,34 +104,32 @@ public class QueueService {
         return token;
     }
 
-    /**
-     * 백그라운드워크에서 1초마다
-     * 대기열에서 batchSize 만큼 추출
-     *
-     * @param eventId 공연Id
-     */
     @Async
     public void processQueue(Long eventId) {
-        // key값 생성 공연마다 대기열 구분 토큰으로 관리
-        int batchSize = 3; // 배치사이즈 처리 속도에 따라 동적으로 관리 가능하게 변환 가능성 염두
+        int batchSize = 3;
 
         int allowSize = countAllow(eventId).intValue();
         if (batchSize - allowSize > 0) {
-            // batchsize 만큼 조회 // index 값이 0부터 시작해서 batchSize - allowSize -1 해야함
             Set<String> batch = redisTemplate.opsForZSet().range(eventQueueKey + eventId, 0, batchSize - allowSize - 1);
             if (batch == null || batch.isEmpty()) {
                 return;
             }
-
             for (String token : batch) {
-                // token에 맞는 sessionId값 가져오기
-                String sessionId = Objects.requireNonNull(redisTemplate.opsForValue().get(tokenKey + eventId + ":" + token)).split(":")[0];
-                String userId = Objects.requireNonNull(redisTemplate.opsForValue().get(tokenKey + eventId + ":" + token)).split(":")[1];
-                // sessionId 값 없을경우 continue
+                String tokenInfo = redisTemplate.opsForValue().get(tokenKey + eventId + ":" + token);
+                if (tokenInfo == null || !tokenInfo.contains(":")) {
+                    // 이 token의 매핑 정보가 없음 (TTL 만료 or 이미 처리됨) → 대기열에서 제거 후 skip
+                    log.warn("processQueue: token 매핑 없음, 대기열에서 제거. eventId={}, token={}", eventId, token);
+                    redisTemplate.opsForZSet().remove(eventQueueKey + eventId, token);
+                    continue;
+                }
+
+                String sessionId = tokenInfo.split(":")[0];
+                String userId = tokenInfo.split(":")[1];
+
                 if (sessionId == null || userId == null) {
                     continue;
                 }
-                // 예매 허용된 상태
+
                 String status = "ALLOWED";
                 Map<String, String> msg = Map.of(
                         "token", token,
@@ -138,10 +141,7 @@ public class QueueService {
                     redisTemplate.opsForValue().increment(allowKey + eventId);
                 }
 
-                // 완료된 유저 삭제
                 redisTemplate.opsForZSet().remove(eventQueueKey + eventId, token);
-                // token -> sessionId 매핑 알림 발송용 키 삭제
-                // sessionId -> token 매핑 중복유저 방지용 키 삭제
                 redisTemplate.delete(List.of(
                         userToTokenKey + eventId + ":" + userId,
                         sessionToTokenKey + eventId + ":" + sessionId
@@ -149,49 +149,33 @@ public class QueueService {
                 queueRegisterStreamService.registerStream(eventId);
             }
         } else {
-        // 최소 다음 batchSize때 예매 상태로 변화할 가능성 있는 순위는 바로 알림 // test 용으로 일단 남은 순번 다 알림
-        Set<String> waiting = redisTemplate.opsForZSet().range(eventQueueKey + eventId, 0, - 1);
-        if (waiting != null && !waiting.isEmpty()) {
-            for (String token : waiting) {
-                rankAlarmQueue(eventId, token);
+            Set<String> waiting = redisTemplate.opsForZSet().range(eventQueueKey + eventId, 0, -1);
+            if (waiting != null && !waiting.isEmpty()) {
+                for (String token : waiting) {
+                    rankAlarmQueue(eventId, token);
+                }
             }
         }
-        }
-
     }
 
-    /**
-     * 대기열 순위 확인
-     *
-     * @param eventId 공연별로 체크
-     * @param token   토큰으로 유저 확인
-     */
     public void rankAlarmQueue(Long eventId, String token) {
         String streamRankKey = "streamRank:" + eventId;
-        // token의 위치 0부터 시작
         Long position = redisTemplate.opsForZSet().rank(eventQueueKey + eventId, token);
-        // token의 위치가 null일 경우 return
         if (position == null) {
             return;
         }
-        String status = "WAITING"; // 대기상태
+        String status = "WAITING";
         Map<String, String> msg = Map.of(
                 "token", token,
                 "status", status,
-                "position", String.valueOf(position + 1) // 0부터 시작해서 + 1
+                "position", String.valueOf(position + 1)
         );
         redisTemplate.opsForStream().add(streamRankKey, msg);
         redisTemplate.expire(streamRankKey, 30, TimeUnit.MINUTES);
         queueRegisterStreamService.alarmStream(eventId);
     }
 
-    /**
-     * 예매 완료시 RedisStream 에서 삭제 후
-     * 다음 우선 순위 예매 가능 상태로 만들기
-     *
-     * @param eventId 공연별 확인
-     * @param token   유저 확인용
-     */
+
     public void completeQueue(Long eventId, String token) {
         String streamId = redisTemplate.opsForValue().get(token);
 
@@ -202,7 +186,5 @@ public class QueueService {
             redisTemplate.opsForValue().decrement(allowKey + eventId);
         }
         processQueue(eventId);
-
     }
-
 }

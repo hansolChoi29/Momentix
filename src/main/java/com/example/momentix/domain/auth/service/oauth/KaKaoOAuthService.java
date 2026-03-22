@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.momentix.domain.common.exception.auth.AuthErrorException;
+
 import static com.example.momentix.domain.common.exception.auth.AuthErrorCode.*;
 
 
@@ -23,8 +24,6 @@ import static com.example.momentix.domain.common.exception.auth.AuthErrorCode.*;
 @Service
 @RequiredArgsConstructor
 public class KaKaoOAuthService implements OAuthService {
-
-    //code를 주고 access_token / refresh_token을 교환받는 URL.
     private static final String TOKEN_URL = "https://kauth.kakao.com/oauth/token";
     private static final String PROFILE_URL = "https://kapi.kakao.com/v2/user/me";
 
@@ -42,26 +41,26 @@ public class KaKaoOAuthService implements OAuthService {
 
     @Transactional
     @Override
-    public OAuthSignInResponse signIn(String code, String state) {
+    public OAuthSignInResponse signIn(
+            String code,
+            String state
+    ) {
         try {
-            // 1) 토큰 요청
             String tokenResponse = oAuthClient.postForm(
                     TOKEN_URL,
-                    "grant_type", "authorization_code",// 토큰 발급 방식
-                    "client_id", clientId,// = REST API 키
-                    "code", code,// 로그인 성공 티켓(임시 번호=인가코드)
+                    "grant_type", "authorization_code",
+                    "client_id", clientId,
+                    "code", code,
                     "redirect_uri", redirectUri,
                     "client_secret", clientSecret
             );
 
-            //소셜 토큰 발급
             JsonNode tokenJson = objectMapper.readTree(tokenResponse);
             String accessToken = tokenJson.get("access_token").asText(null);
             if (accessToken == null) {
                 throw new AuthErrorException(OAUTH_TOKEN_EXCHANGE_FAILED);
             }
 
-            // 2) 프로필 조회
             String profileResponse = oAuthClient.get(PROFILE_URL, accessToken);
             JsonNode root = objectMapper.readTree(profileResponse);
             JsonNode kakaoAccount = root.path("kakao_account");
@@ -74,7 +73,6 @@ public class KaKaoOAuthService implements OAuthService {
                 throw new AuthErrorException(OAUTH_EMAIL_SCOPE_REQUIRED);
             }
 
-            // 3) 유저 조회/생성
             Users user = userRepository.findBySignIn_Username(email).orElseGet(() -> {
                 Users newUser = new Users();
                 newUser.setNickname(nickname);
@@ -90,7 +88,6 @@ public class KaKaoOAuthService implements OAuthService {
                 return signInRepository.save(signIn);
             });
 
-            // 4) JWT 발급
             String accessJwt = JwtUtil.createAccessToken(user.getUserId(), email, user.getRole());
             String refreshJwt = JwtUtil.createRefreshToken(user.getUserId());
 
@@ -98,6 +95,8 @@ public class KaKaoOAuthService implements OAuthService {
                     accessJwt, refreshJwt, user.getUserId(), email, user.getNickname(), "KAKAO"
             );
 
+        } catch (AuthErrorException e) {
+            throw e; // 내부에서 세밀하게 던진 에러코드 그대로 전달
         } catch (Exception e) {
             throw new AuthErrorException(OAUTH_PROVIDER_ERROR);
         }

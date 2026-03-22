@@ -44,24 +44,19 @@ public class NaverOAuthService implements OAuthService {
     @Value("${naver.redirect.uri}")
     private String redirectUri;
 
-    // token 발급 요청 → 응답(JSON) → Access Token 추출
     @Transactional
     public OAuthSignInResponse signIn(String code, String state) {
-        //네이버 인증 서버에 code보내고 토큰 받아오는 단계
         try {
             String tokenResponse = oAuthClient.postForm(
-                    TOKEN_URL, // 네이버 토큰 발급 API 주소
-                    "grant_type", "authorization_code",// OAuth2 표준: "authorization_code" 방식
-
-
-                    "client_id", clientId,// 네이버 앱 Client ID
-                    "client_secret", clientSecret, // 네이버 앱 Client Secret
-                    "code", code,  // 네이버가 redirect_uri로 넘겨준 인증 코드
-                    "state", state,   // 요청 때 보냈던 state (CSRF 방지)
+                    TOKEN_URL,
+                    "grant_type", "authorization_code",
+                    "client_id", clientId,
+                    "client_secret", clientSecret,
+                    "code", code,
+                    "state", state,
                     "redirect_uri", redirectUri
             );
 
-            //Access Token 발급
             JsonNode tokenJson = objectMapper.readTree(tokenResponse);
             String accessToken = tokenJson.get("access_token").asText("");
             if (accessToken == null) {
@@ -71,16 +66,11 @@ public class NaverOAuthService implements OAuthService {
             String profileResponse = oAuthClient.get(PROFILE_URL, accessToken);
             JsonNode root = objectMapper.readTree(profileResponse);
 
-            //Access Token으로 사용자 프로필 조회
-            //ex){ "resultcode": "00", "message": "success" }
             if (!"00".equals(root.get("resultcode").asText())) {
                 throw new AuthErrorException(OAUTH_PROFILE_FETCH_FAILED);
             }
             JsonNode response = root.get("response");
 
-
-            // get: 필드가 없으면 NPE
-            // paht: 필드 없으면 ""
             String email = response.get("email").asText();
             String nickname = response.get("nickname").asText();
             String name = response.path("name").asText(null);
@@ -91,10 +81,9 @@ public class NaverOAuthService implements OAuthService {
                 throw new AuthErrorException(OAUTH_PROFILE_FETCH_FAILED);
             }
 
-            LocalDate birthDate = toBirthDate(birthyear, birthday); // null 허용
-            String phoneNumber = normalizePhone(mobile);           // null 또는 "01012345678"
+            LocalDate birthDate = toBirthDate(birthyear, birthday);
+            String phoneNumber = normalizePhone(mobile);
 
-            //유저 DB 조회 후 없으면 생성
             Users user = userRepository.findBySignIn_Username(email).orElseGet(() -> {
                 Users users = new Users();
                 users.setNickname(nickname);
@@ -103,7 +92,7 @@ public class NaverOAuthService implements OAuthService {
                 users.setPhoneNumber(phoneNumber);
                 return userRepository.save(users);
             });
-            //로그인 DB 조회 후 없으면 생성     
+
             signInRepository.findByUsername(email).orElseGet(() -> {
                 SignIn signIn = new SignIn();
                 signIn.setUsername(email);
@@ -112,7 +101,6 @@ public class NaverOAuthService implements OAuthService {
                 return signInRepository.save(signIn);
             });
 
-            //JWT 발급
             String accessJwt = JwtUtil.createAccessToken(user.getUserId(), email, user.getRole());
             String refreshJwt = JwtUtil.createRefreshToken(user.getUserId());
 
@@ -120,37 +108,36 @@ public class NaverOAuthService implements OAuthService {
                     accessJwt, refreshJwt, user.getUserId(), email, user.getNickname(), "NAVER"
             );
 
+        } catch (AuthErrorException e) {
+            throw e; // 내부에서 세밀하게 던진 에러코드 그대로 전달
         } catch (Exception e) {
-            throw new AuthErrorException(OAUTH_PROVIDER_ERR);
+            throw new AuthErrorException(OAUTH_PROVIDER_ERROR);
         }
-
     }
 
-    // 네이버 프로필에서 응답받은 생년월일 LocalDate로 바꿔주는 함수
     private LocalDate toBirthDate(String year, String monthDay) {
         if (year == null || monthDay == null)
-            return null;//연도나 생일 정보가 없으면 그냥 null 반환.
-        String[] md = monthDay.split("-");//"05-21" 같은 문자열을 "-" 기준으로 잘라서
-        if (md.length != 2)//잘못된 형식이면 null 처리.
+            return null;
+        String[] md = monthDay.split("-");
+        if (md.length != 2)
             return null;
         try {
             return LocalDate.of(
-                    Integer.parseInt(year), // 2000
-                    Integer.parseInt(md[0]), // 02 (월)
-                    Integer.parseInt(md[1])// 19 (일)
+                    Integer.parseInt(year),
+                    Integer.parseInt(md[0]),
+                    Integer.parseInt(md[1])
             );
         } catch (Exception e) {
             return null;
         }
     }
 
-    // 네이버 프로필에서 응답 받은 전화번호 정규화작업
     private String normalizePhone(String mobile) {
-        if (mobile == null)//전화번호가 아예 없으면 null 반환
+        if (mobile == null)
             return null;
-        String digits = mobile.replaceAll("[^0-9]", ""); //정규식 [^0-9] = 숫자가 아닌 모든 문자,전부 제거해서 숫자만 남김
+        String digits = mobile.replaceAll("[^0-9]", "");
         if (digits.length() == 11 && digits.startsWith("010")) {
-            return digits; // 01012345678 형태
+            return digits; 
         }
         return digits;
     }

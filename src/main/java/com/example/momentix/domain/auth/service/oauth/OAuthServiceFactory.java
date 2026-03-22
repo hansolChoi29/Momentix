@@ -8,7 +8,6 @@ import static com.example.momentix.domain.common.exception.auth.AuthErrorCode.*;
 import com.example.momentix.domain.common.exception.auth.AuthErrorException;
 
 
-//분기 처리
 @Component
 @RequiredArgsConstructor
 public class OAuthServiceFactory {

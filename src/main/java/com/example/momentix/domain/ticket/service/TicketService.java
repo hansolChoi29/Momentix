@@ -11,6 +11,7 @@ import com.example.momentix.domain.ticket.entity.TicketStatusType;
 import com.example.momentix.domain.ticket.entity.Tickets;
 import com.example.momentix.domain.ticket.repository.TicketRepository;
 import com.example.momentix.domain.users.entity.Users;
+import com.example.momentix.domain.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,21 +27,32 @@ import static com.example.momentix.domain.common.exception.ticket.TicketCode.*;
 @Service
 @RequiredArgsConstructor
 public class TicketService {
-
+    private final UserRepository userRepository;
     private final TicketRepository ticketRepository;
     private final ReservationRepository reservationRepository;
 
-    @Transactional
-    public TicketResponseDto createTicket(CreateTicketRequestDto requestDto) {
+    private Users getUser(String email) {
+        return userRepository.findBySignIn_Username(email)
+                .orElseThrow(() -> new TicketErrorException(FORBIDDEN));
+    }
 
-        // 1. reservationId로 임시 예매 정보 조회
+    @Transactional
+    public TicketResponseDto createTicket(String email, CreateTicketRequestDto requestDto) {
+        Users requester = getUser(email);
+
         Reservations reservation = reservationRepository.findById(requestDto.getReservationId())
                 .orElseThrow(() -> new TicketErrorException(RESERVATION_NOT_FOUND));
 
-        // 2. 고유한 티켓 번호를 생성합니다.
+        if (!reservation.getUsers().getUserId().equals(requester.getUserId())) {
+            throw new TicketErrorException(FORBIDDEN);
+        }
+
+        return issueTicket(reservation);
+    }
+
+    private TicketResponseDto issueTicket(Reservations reservation) {
         String ticketNumber = "MOMENTIX-" + UUID.randomUUID().toString().toUpperCase().substring(0, 13);
 
-        // 3. 임시 예매 정보를 바탕으로 최종 티켓(Tickets) 엔티티를 생성합니다.
         Tickets ticket = new Tickets(
                 reservation.getUsers(),
                 reservation.getEventTimeReserveSeat().getEventSeat().getSeats(),
@@ -48,9 +60,7 @@ public class TicketService {
                 ticketNumber
         );
 
-        // 4. Ticket 저장 및 Reservation 삭제 (소프트딜리트)
         Tickets savedTicket = ticketRepository.save(ticket);
-
         reservation.completeTicketIssuance();
 
         log.info("test{},--{}", savedTicket.getTicketId(), savedTicket.getTicketNumber());
@@ -59,20 +69,25 @@ public class TicketService {
     }
 
     // 내 티켓 내역 전체 조회
-    public Page<TicketResponseDto> getMyTickets(Users user, Pageable pageable) {
-
+    public Page<TicketResponseDto> getMyTickets(
+            String email,
+            Pageable pageable
+    ) {
+        Users user = getUser(email);
         Page<Tickets> ticketPage = ticketRepository.findByUsersAndIsDeletedFalse(user, pageable);
 
         return ticketPage.map(TicketResponseDto::new);
     }
 
     // 내 티켓 내역 단건 조회
-    public TicketResponseDto getTicket(Long ticketId, Users user) {
-
+    public TicketResponseDto getTicket(
+            Long ticketId,
+            String email
+    ) {
+        Users user = getUser(email);
         Tickets ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new TicketErrorException(RESERVATION_NOT_FOUND));
 
-        // 찾은 티켓의 주인과 현재 로그인한 유저가 같은지 확인
         if (!ticket.getUsers().getUserId().equals(user.getUserId())) {
             throw new TicketErrorException(FORBIDDEN);
         }
@@ -82,8 +97,12 @@ public class TicketService {
 
     // 티켓 결제 취소
     @Transactional
-    public void updateTicketStatus(Long ticketId, UpdateTicketStatusRequestDto requestDto, Users user) {
-
+    public void updateTicketStatus(
+            Long ticketId,
+            UpdateTicketStatusRequestDto requestDto,
+            String email
+    ) {
+        Users user = getUser(email);
         Tickets ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new TicketErrorException(RESERVATION_NOT_FOUND));
 
@@ -91,7 +110,6 @@ public class TicketService {
             throw new TicketErrorException(FORBIDDEN);
         }
 
-        // 요청된 상태가 'CANCEL_TICKET'이 맞는지 확인합니다.
         if (requestDto.getTicketStatus() != TicketStatusType.CANCEL_TICKET) {
             throw new TicketErrorException(INVALID_TICKET_STATUS);
         }
@@ -101,9 +119,11 @@ public class TicketService {
 
     // 티켓 내역 삭제
     @Transactional
-    public void softDeleteTicketByAdmin(Long ticketId, Users adminUser) {
-
-        // 요청한 사용자가 ADMIN인지 확인
+    public void softDeleteTicketByAdmin(
+            Long ticketId,
+            String email
+    ) {
+        Users adminUser = getUser(email);
         if (adminUser.getRole() != RoleType.ADMIN) {
             throw new TicketErrorException(FORBIDDEN);
         }

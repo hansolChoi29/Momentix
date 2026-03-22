@@ -6,6 +6,7 @@ import com.example.momentix.domain.search.dto.SearchRequestDto;
 import com.example.momentix.domain.search.dto.SearchResponseDto;
 import com.example.momentix.domain.search.service.SearchService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -15,13 +16,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/search")
 public class SearchController {
     private final SearchService searchService;
-
-    public SearchController(SearchService searchService) {
-        this.searchService = searchService;
-    }
 
     @GetMapping
     public ResponseEntity<Page<SearchResponseDto>> searchEvent(

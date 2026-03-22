@@ -48,7 +48,7 @@ public class EmailVerificationService {
     }
 
     //인증 코드 발송
-    public EmailDto sendCode(EmailCommand command) {
+    public void sendCode(EmailCommand command) {
         String code = String.valueOf(secureRandom.nextInt(900000) + 100000);
         //쿨다운
         if (Boolean.TRUE.equals(redisTemplate.hasKey(cooldownKey(command.getEmail())))) {
@@ -69,8 +69,6 @@ public class EmailVerificationService {
         message.setText("인증 코드 " + code + "\n유효시간: " + (codeTtlSec / 60) + "분");
         // 실제 메일 전송(STMP서버 통해 발송)
         mailSender.send(message);
-
-        return null;
     }
 
     // 사용자가 제출한 이메일/코드 확인하고 인증 성공 시 1회용 검증 토큰 발생

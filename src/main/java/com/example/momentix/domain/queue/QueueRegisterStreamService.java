@@ -22,8 +22,8 @@ public class QueueRegisterStreamService {
     private final StreamMessageListenerContainer<String, MapRecord<String, String, String>> container;
     private final QueueConsumer queueConsumer;
     private final RankConsumer rankConsumer;
-    private final Map<Long, Boolean> registeredStreams = new ConcurrentHashMap<>();
-    private final Map<Long, Boolean> alarmStreams = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> registeredStreams = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> alarmStreams = new ConcurrentHashMap<>();
     private final RedisTemplate<String, String> redisTemplate;
 
     @PostConstruct
@@ -39,7 +39,11 @@ public class QueueRegisterStreamService {
             return;
         }
         try {
-            redisTemplate.opsForStream().createGroup(streamKey, ReadOffset.from("0"), "eventQueueGroup" + eventId);
+            redisTemplate.opsForStream().createGroup(
+                    streamKey,
+                    ReadOffset.from("0"),
+                    "eventQueueGroup" + eventId
+            );
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("BUSY GROUP")) {
                 throw new IllegalIdentifierException("이미 존재하는 그룹");
@@ -50,12 +54,14 @@ public class QueueRegisterStreamService {
 
         container.receive(
                 Consumer.from("eventQueueGroup" + eventId, "consumer" + eventId),
-                StreamOffset.create(streamKey, ReadOffset.lastConsumed()),
+                StreamOffset.create(
+                        streamKey,
+                        ReadOffset.lastConsumed()
+                ),
                 queueConsumer
         );
         log.info("Stream 등록 확인");
-        registeredStreams.put(eventId, true);
-
+        registeredStreams.put(streamKey, true);
     }
 
     public void alarmStream(Long eventId) {
@@ -73,13 +79,11 @@ public class QueueRegisterStreamService {
                 return;
             }
         }
-
         container.receive(
                 Consumer.from("alarmQueueGroup" + eventId, "consumer" + eventId),
                 StreamOffset.create(streamRankKey, ReadOffset.lastConsumed()),
                 rankConsumer
         );
-        alarmStreams.put(eventId, true);
-
+        alarmStreams.put(streamRankKey, true);
     }
 }

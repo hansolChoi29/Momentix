@@ -11,16 +11,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import com.example.momentix.domain.common.exception.auth.AuthErrorException;
+
 import static com.example.momentix.domain.common.exception.auth.AuthErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
 public class SignUpService {
+    private static final String HOST_PREFIX = "momentixHost";
     private final UserRepository userRepository;
     private final SignInRepository signInRepository;
     private final PasswordEncoder passwordEncoder;
-    private static final String HOST_PREFIX = "momentixHost";
 
     @Transactional
     public Long signUpUser(String email, SignUpRequest req) {
@@ -32,16 +34,16 @@ public class SignUpService {
         }
 
         Users users = Users.createConsumer(email, req, passwordEncoder);
+
         userRepository.save(users);
         return users.getUserId();
     }
 
-    //호스트 가입(입력은 사업자번호 하나, username/password는 자동 생성 & 동일)
     @Transactional
     public Map<String, String> signUpHost(SignUpRequest signUpRequest) {
-        // 409: 사업자번호 중복 확인
+
         if (userRepository.existsByBusinessNumber(signUpRequest.getBusinessNumber())) {
-            throw new AuthErrorException(BAD_REQUEST);
+            throw new AuthErrorException(CONFLICT);
         }
 
         String username = nextHostUsername(); // ex) momentixHost0001!
@@ -54,12 +56,10 @@ public class SignUpService {
         Map<String, String> creds = new HashMap<>();
         creds.put("username", username);
         creds.put("password", rawPassword);
-        // 저장
+
         return creds;
     }
 
-
-    // host ID 생성
     private String nextHostUsername() {
         for (int width : new int[]{4, 5, 6}) {
             int max = (int) Math.pow(10, width) - 1;
