@@ -22,8 +22,8 @@ public class QueueRegisterStreamService {
     private final StreamMessageListenerContainer<String, MapRecord<String, String, String>> container;
     private final QueueConsumer queueConsumer;
     private final RankConsumer rankConsumer;
-    private final Map<Long, Boolean> registeredStreams = new ConcurrentHashMap<>();
-    private final Map<Long, Boolean> alarmStreams = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> registeredStreams = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> alarmStreams = new ConcurrentHashMap<>();
     private final RedisTemplate<String, String> redisTemplate;
 
     @PostConstruct
@@ -35,19 +35,15 @@ public class QueueRegisterStreamService {
 
     public void registerStream(Long eventId) {
         String streamKey = "stream:" + eventId;
-
-        /* TODO : key 타입 불일치
-         * String으로 조회하는데 Long으로 저장
-         *
-         * map의 제네릭은 Map<Long, Boolean>인데 containsKey(streamKey)에서 String임
-         * Long, String 불일치
-         * */
-
         if (registeredStreams.containsKey(streamKey)) {
             return;
         }
         try {
-            redisTemplate.opsForStream().createGroup(streamKey, ReadOffset.from("0"), "eventQueueGroup" + eventId);
+            redisTemplate.opsForStream().createGroup(
+                    streamKey,
+                    ReadOffset.from("0"),
+                    "eventQueueGroup" + eventId
+            );
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("BUSY GROUP")) {
                 throw new IllegalIdentifierException("이미 존재하는 그룹");
@@ -58,17 +54,18 @@ public class QueueRegisterStreamService {
 
         container.receive(
                 Consumer.from("eventQueueGroup" + eventId, "consumer" + eventId),
-                StreamOffset.create(streamKey, ReadOffset.lastConsumed()),
+                StreamOffset.create(
+                        streamKey,
+                        ReadOffset.lastConsumed()
+                ),
                 queueConsumer
         );
         log.info("Stream 등록 확인");
-        registeredStreams.put(eventId, true);
-
+        registeredStreams.put(streamKey, true);
     }
 
     public void alarmStream(Long eventId) {
         String streamRankKey = "streamRank:" + eventId;
-        // TODO : 여기도 타입 불일치 String
         if (alarmStreams.containsKey(streamRankKey)) {
             return;
         }
@@ -82,13 +79,11 @@ public class QueueRegisterStreamService {
                 return;
             }
         }
-
         container.receive(
                 Consumer.from("alarmQueueGroup" + eventId, "consumer" + eventId),
                 StreamOffset.create(streamRankKey, ReadOffset.lastConsumed()),
                 rankConsumer
         );
-        alarmStreams.put(eventId, true);
-
+        alarmStreams.put(streamRankKey, true);
     }
 }

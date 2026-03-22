@@ -19,10 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Component
 public class QueueWebSocketHandler extends TextWebSocketHandler {
-
     private static final ConcurrentHashMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
-
-
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
@@ -72,11 +69,12 @@ public class QueueWebSocketHandler extends TextWebSocketHandler {
         if (httpSessionId != null) {
             sessions.remove(httpSessionId);
         }
-        String query = session.getUri() != null ? session.getUri().getQuery() : null;
-        if(query != null && query.contains("userId=")) {
-            sessions.remove(session.getUri().getQuery().split("usserId=")[1]);
-        }
 
+        String query = session.getUri() != null ? session.getUri().getQuery() : null;
+
+        if(query != null && query.contains("userId=")) {
+            sessions.remove(session.getUri().getQuery().split("userId=")[1]);
+        }
     }
 
     public void sendMessage(String userId, String message) throws IOException {

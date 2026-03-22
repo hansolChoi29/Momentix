@@ -34,6 +34,7 @@ public class SignUpService {
         }
 
         Users users = Users.createConsumer(email, req, passwordEncoder);
+
         userRepository.save(users);
         return users.getUserId();
     }
