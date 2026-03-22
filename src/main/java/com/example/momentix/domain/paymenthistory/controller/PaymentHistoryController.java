@@ -6,6 +6,7 @@ import com.example.momentix.domain.paymenthistory.dto.PaymentResponse;
 import com.example.momentix.domain.paymenthistory.service.PaymentHistoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -13,13 +14,10 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Payment", description = "결제 관련 API")
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/payment")
 public class PaymentHistoryController {
     private final PaymentHistoryService paymentHistoryService;
-
-    public PaymentHistoryController(PaymentHistoryService paymentHistoryService) {
-        this.paymentHistoryService = paymentHistoryService;
-    }
 
     @Operation(summary = "결제 생성", description = "결제 대기(PENDING) 상태로 생성")
     @PostMapping

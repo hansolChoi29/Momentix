@@ -37,15 +37,22 @@ public class TicketService {
     }
 
     @Transactional
-    public TicketResponseDto createTicket(CreateTicketRequestDto requestDto) {
-        // 1. reservationId로 임시 예매 정보 조회
+    public TicketResponseDto createTicket(String email, CreateTicketRequestDto requestDto) {
+        Users requester = getUser(email);
+
         Reservations reservation = reservationRepository.findById(requestDto.getReservationId())
                 .orElseThrow(() -> new TicketErrorException(RESERVATION_NOT_FOUND));
 
-        // 2. 고유한 티켓 번호를 생성합니다.
+        if (!reservation.getUsers().getUserId().equals(requester.getUserId())) {
+            throw new TicketErrorException(FORBIDDEN);
+        }
+
+        return issueTicket(reservation);
+    }
+
+    private TicketResponseDto issueTicket(Reservations reservation) {
         String ticketNumber = "MOMENTIX-" + UUID.randomUUID().toString().toUpperCase().substring(0, 13);
 
-        // 3. 임시 예매 정보를 바탕으로 최종 티켓(Tickets) 엔티티를 생성합니다.
         Tickets ticket = new Tickets(
                 reservation.getUsers(),
                 reservation.getEventTimeReserveSeat().getEventSeat().getSeats(),
@@ -53,9 +60,7 @@ public class TicketService {
                 ticketNumber
         );
 
-        // 4. Ticket 저장 및 Reservation 삭제 (소프트딜리트)
         Tickets savedTicket = ticketRepository.save(ticket);
-
         reservation.completeTicketIssuance();
 
         log.info("test{},--{}", savedTicket.getTicketId(), savedTicket.getTicketNumber());
@@ -83,7 +88,6 @@ public class TicketService {
         Tickets ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new TicketErrorException(RESERVATION_NOT_FOUND));
 
-        // 찾은 티켓의 주인과 현재 로그인한 유저가 같은지 확인
         if (!ticket.getUsers().getUserId().equals(user.getUserId())) {
             throw new TicketErrorException(FORBIDDEN);
         }
@@ -106,7 +110,6 @@ public class TicketService {
             throw new TicketErrorException(FORBIDDEN);
         }
 
-        // 요청된 상태가 'CANCEL_TICKET'이 맞는지 확인합니다.
         if (requestDto.getTicketStatus() != TicketStatusType.CANCEL_TICKET) {
             throw new TicketErrorException(INVALID_TICKET_STATUS);
         }
@@ -120,8 +123,7 @@ public class TicketService {
             Long ticketId,
             String email
     ) {
-        Users adminUser  = getUser(email);
-        // 요청한 사용자가 ADMIN인지 확인
+        Users adminUser = getUser(email);
         if (adminUser.getRole() != RoleType.ADMIN) {
             throw new TicketErrorException(FORBIDDEN);
         }

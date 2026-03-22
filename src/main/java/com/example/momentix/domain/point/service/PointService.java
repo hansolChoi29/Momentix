@@ -21,6 +21,7 @@ import com.example.momentix.domain.reservation.entity.Reservations;
 import com.example.momentix.domain.reservation.repository.ReservationRepository;
 import com.example.momentix.domain.users.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +32,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class PointService {
     private final PointsRepository pointsRepository;
     private final PointLedgerRepository ledgerRepository;
@@ -39,30 +41,12 @@ public class PointService {
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
 
-    public PointService(
-            PointsRepository pointsRepository,
-            PointLedgerRepository ledgerRepository,
-            PointsPolicyService policyService,
-            PaymentHistoryRepository paymentHistoryRepository,
-            ReservationRepository reservationRepository,
-            UserRepository userRepository
-    ) {
-        this.pointsRepository = pointsRepository;
-        this.ledgerRepository = ledgerRepository;
-        this.policyService = policyService;
-        this.paymentHistoryRepository = paymentHistoryRepository;
-        this.reservationRepository = reservationRepository;
-        this.userRepository = userRepository;
-    }
-
-    // ===== email → userId 변환 헬퍼 =====
     private Long getUserId(String email) {
         return userRepository.findBySignIn_Username(email)
                 .orElseThrow(() -> new AuthErrorException(AuthErrorCode.NOT_FOUND))
                 .getUserId();
     }
 
-    // ===== 컨트롤러용 email 래퍼 =====
     public PointBalanceResponse getMyPoints(String email) {
         return getMyPoints(getUserId(email));
     }
@@ -90,7 +74,6 @@ public class PointService {
         return refundUsedPointsForPayment(getUserId(email), idempotencyKey, paymentId, reason);
     }
 
-    // ===== userId 기반 실제 로직 =====
     public PointBalanceResponse getMyPoints(Long userId) {
         Points points = pointsRepository.findByUserId(userId)
                 .orElseGet(() -> pointsRepository.save(new Points(userId, 0L, 0L)));
@@ -145,9 +128,14 @@ public class PointService {
 
     @Transactional
     public PointBalanceResponse earnPendingByPaymentAmount(
-            Long userId, String idempotencyKey, Long paymentId,
-            Long reservationId, BigDecimal discountedAmount,
-            String reason, PaymentStatusType paymentStatusType) {
+            Long userId,
+            String idempotencyKey,
+            Long paymentId,
+            Long reservationId,
+            BigDecimal discountedAmount,
+            String reason,
+            PaymentStatusType paymentStatusType
+    ) {
         if (alreadyDone(userId, idempotencyKey)) return getMyPoints(userId);
 
         verifyPaymentOwnershipAndMatch(userId, paymentId, reservationId);
@@ -160,12 +148,22 @@ public class PointService {
         }
 
         long earn = policyService.calculateEarnPoints(discountedAmount);
-        return earnPending(userId, idempotencyKey, earn, reason, paymentId, reservationId);
+        return earnPending(
+                userId,
+                idempotencyKey,
+                earn, reason,
+                paymentId,
+                reservationId
+        );
     }
 
     @Transactional
     public PointBalanceResponse releasePendingByPayment(
-            Long userId, String idempotencyKey, Long paymentId, String reason) {
+            Long userId,
+            String idempotencyKey,
+            Long paymentId,
+            String reason
+    ) {
         verifyPaymentOwnership(userId, paymentId);
         if (alreadyDone(userId, idempotencyKey)) return getMyPoints(userId);
 
@@ -177,12 +175,23 @@ public class PointService {
         long pending = ledgerRepository.sumPendingEarnByPayment(userId, paymentId);
         if (pending <= 0) return getMyPoints(userId);
 
-        return releasePending(userId, idempotencyKey, pending, reason, paymentId, null);
+        return releasePending(
+                userId,
+                idempotencyKey,
+                pending,
+                reason,
+                paymentId,
+                null
+        );
     }
 
     @Transactional
     public PointBalanceResponse cancelPendingForPayment(
-            Long userId, String idempotencyKey, Long paymentId, String reason) {
+            Long userId,
+            String idempotencyKey,
+            Long paymentId,
+            String reason
+    ) {
         if (alreadyDone(userId, idempotencyKey)) return getMyPoints(userId);
 
         verifyPaymentOwnership(userId, paymentId);
@@ -193,13 +202,25 @@ public class PointService {
         Points points = lockRow(userId);
         if (points.getPointPending() < pendingAmount) pendingAmount = points.getPointPending();
         points.decreasePending(pendingAmount);
-        writeLedger(userId, idempotencyKey, PointOperationType.PENDING_CANCEL, -pendingAmount, reason, paymentId, null);
+        writeLedger(
+                userId,
+                idempotencyKey,
+                PointOperationType.PENDING_CANCEL,
+                -pendingAmount,
+                reason,
+                paymentId,
+                null
+        );
         return snapshot(points);
     }
 
     @Transactional
     public PointBalanceResponse refundUsedPointsForPayment(
-            Long userId, String idempotencyKey, Long paymentId, String reason) {
+            Long userId,
+            String idempotencyKey,
+            Long paymentId,
+            String reason
+    ) {
         if (alreadyDone(userId, idempotencyKey)) return getMyPoints(userId);
 
         verifyPaymentOwnership(userId, paymentId);
@@ -213,12 +234,14 @@ public class PointService {
         return snapshot(points);
     }
 
-    // ===== private 헬퍼 =====
     private void requirePositive(long amount) {
         if (amount <= 0) throw new PointErrorException(INVALID_POINT_AMOUNT);
     }
 
-    private boolean alreadyDone(Long userId, String idempotencyKey) {
+    private boolean alreadyDone(
+            Long userId,
+            String idempotencyKey
+    ) {
         if (idempotencyKey == null || idempotencyKey.isEmpty())
             throw new PaymentHistoryErrorException(DUPLEICATED_REQUEST);
         return ledgerRepository.existsByUserIdAndIdempotencyKey(userId, idempotencyKey);
@@ -229,19 +252,41 @@ public class PointService {
         return opt.orElseGet(() -> pointsRepository.save(new Points(userId, 0L, 0L)));
     }
 
-    private void writeLedger(Long userId, String idempotencyKey, PointOperationType type,
-                             long amount, String reason, Long paymentId, Long reservationId) {
+    private void writeLedger(
+            Long userId,
+            String idempotencyKey,
+            PointOperationType type,
+            long amount,
+            String reason,
+            Long paymentId,
+            Long reservationId
+    ) {
         try {
-            ledgerRepository.save(new PointLedger(userId, idempotencyKey, type, amount, reason, paymentId, reservationId));
+            ledgerRepository.save(new PointLedger(
+                    userId,
+                    idempotencyKey,
+                    type,
+                    amount,
+                    reason,
+                    paymentId,
+                    reservationId)
+            );
         } catch (DataIntegrityViolationException ignored) {
         }
     }
 
     private PointBalanceResponse snapshot(Points points) {
-        return new PointBalanceResponse(points.getUserId(), points.getPointBalance(), points.getPointPending());
+        return new PointBalanceResponse(
+                points.getUserId(),
+                points.getPointBalance(),
+                points.getPointPending()
+        );
     }
 
-    private PaymentHistory verifyPaymentOwnership(Long userId, Long paymentId) {
+    private PaymentHistory verifyPaymentOwnership(
+            Long userId,
+            Long paymentId
+    ) {
         PaymentHistory payment = paymentHistoryRepository.findById(paymentId)
                 .orElseThrow(() -> new PaymentHistoryErrorException(PAYMENT_NO_SUCCESS));
 
@@ -254,7 +299,11 @@ public class PointService {
         return payment;
     }
 
-    private PaymentHistory verifyPaymentOwnershipAndMatch(Long userId, Long paymentId, Long reservationId) {
+    private PaymentHistory verifyPaymentOwnershipAndMatch(
+            Long userId,
+            Long paymentId,
+            Long reservationId
+    ) {
         PaymentHistory payment = verifyPaymentOwnership(userId, paymentId);
         if (reservationId != null && !payment.getReservationId().equals(reservationId)) {
             throw new PaymentHistoryErrorException(PAYMENT_RESERVATION_MISMATCH);

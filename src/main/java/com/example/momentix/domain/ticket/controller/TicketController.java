@@ -26,8 +26,11 @@ public class TicketController {
 
     @Operation(summary = "티켓 발급", description = "결제 확정 후 티켓 생성")
     @PostMapping("/tickets")
-    public ResponseEntity<TicketResponseDto> createTicket(@RequestBody CreateTicketRequestDto requestDto) {
-        TicketResponseDto response = ticketService.createTicket(requestDto);
+    public ResponseEntity<TicketResponseDto> createTicket(
+            @AuthenticationPrincipal String email,
+            @RequestBody CreateTicketRequestDto requestDto
+    ) {
+        TicketResponseDto response = ticketService.createTicket(email, requestDto);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -71,5 +74,4 @@ public class TicketController {
         ticketService.softDeleteTicketByAdmin(ticketId, email);
         return ResponseEntity.noContent().build();
     }
-
 }

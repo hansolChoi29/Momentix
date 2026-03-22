@@ -18,6 +18,7 @@ import com.example.momentix.domain.ticket.entity.Tickets;
 import com.example.momentix.domain.ticket.repository.TicketRepository;
 import com.example.momentix.domain.ticket.service.TicketService;
 import com.example.momentix.domain.users.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.momentix.domain.common.exception.reservation.ReservationErrorException;
@@ -32,6 +33,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class PaymentHistoryService {
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final ReservationRepository reservationRepository;
@@ -40,24 +42,6 @@ public class PaymentHistoryService {
     private final PointService pointService;
     private final QueueService queueService;
     private final UserRepository userRepository;
-
-    public PaymentHistoryService(
-            PaymentHistoryRepository paymentHistoryRepository,
-            ReservationRepository reservationRepository,
-            TicketRepository ticketRepository,
-            TicketService ticketService,
-            PointService pointService,
-            QueueService queueService,
-            UserRepository userRepository
-    ) {
-        this.paymentHistoryRepository = paymentHistoryRepository;
-        this.reservationRepository = reservationRepository;
-        this.ticketService = ticketService;
-        this.ticketRepository = ticketRepository;
-        this.pointService = pointService;
-        this.queueService = queueService;
-        this.userRepository = userRepository;
-    }
 
     private Long getUserId(String email) {
         return userRepository.findBySignIn_Username(email)
@@ -147,7 +131,7 @@ public class PaymentHistoryService {
         // 4) 티켓 발급
         CreateTicketRequestDto createTicketRequestDto = new CreateTicketRequestDto();
         createTicketRequestDto.setReservationId(paymentConfirmRequest.getReservationId());
-        TicketResponseDto ticket = ticketService.createTicket(createTicketRequestDto);
+        TicketResponseDto ticket = ticketService.createTicket(email, createTicketRequestDto);
 
         // 5) 티켓에 결제ID 링크 (FK 주인: 티켓)
         int updated = ticketRepository.linkPayment(ticket.getTicketId(), paymentHistory);

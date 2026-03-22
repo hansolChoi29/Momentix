@@ -1,6 +1,7 @@
 package com.example.momentix.domain.point.service;
 
 import com.example.momentix.domain.common.exception.point.PointErrorException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import static com.example.momentix.domain.common.exception.point.PointCode.*;
 import java.math.BigDecimal;
