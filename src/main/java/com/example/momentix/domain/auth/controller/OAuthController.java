@@ -5,6 +5,8 @@ import com.example.momentix.domain.auth.dto.response.OAuthSignInResponse;
 import com.example.momentix.domain.auth.entity.OAuthProvider;
 import com.example.momentix.domain.auth.service.oauth.OAuthService;
 import com.example.momentix.domain.auth.service.oauth.OAuthServiceFactory;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +20,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.util.UUID;
 
+
+@Tag(name = "OAuth", description = "소셜 로그인 API")
 @RestController
 @RequestMapping("/auth/sign-in")
 @RequiredArgsConstructor
@@ -37,7 +41,7 @@ public class OAuthController {
     @Value("${kakao.redirect.uri}")
     private String kakaoRedirectUri;
 
-
+    @Operation(summary = "네이버 로그인 요청", description = "네이버 로그인 페이지로 리다이렉트")
     @GetMapping("/naver")
     public ResponseEntity<Void> naver(HttpSession session) {
         String state = UUID.randomUUID().toString();
@@ -55,6 +59,7 @@ public class OAuthController {
     }
 
     //------------카카오---------
+    @Operation(summary = "카카오 로그인 요청", description = "카카오 로그인 페이지로 리다이렉트")
     @GetMapping("/kakao")
     public ResponseEntity<Void> kakao(HttpSession session) {
         String state = UUID.randomUUID().toString();
@@ -75,6 +80,7 @@ public class OAuthController {
     }
 
     // auth/sign-in/oauth/callback/provider → code를 받아서 토큰 발급 요청 → 프로필 조회 → DB 저장 → JWT 리턴
+    @Operation(summary = "네이버 로그인 콜백", description = "네이버 인가 코드로 JWT 발급")
     @GetMapping("/callback/naver")
     public OAuthSignInResponse callback(
             @RequestParam("code") String code,
@@ -84,6 +90,7 @@ public class OAuthController {
         return service.signIn(code, stateParam);
     }
 
+    @Operation(summary = "카카오 로그인 콜백", description = "카카오 인가 코드로 JWT 발급")
     @GetMapping("/callback/kakao")
     public OAuthSignInResponse kakaoCallback(
             @RequestParam("code") String code,
