@@ -35,6 +35,14 @@ public class QueueRegisterStreamService {
 
     public void registerStream(Long eventId) {
         String streamKey = "stream:" + eventId;
+
+        /* TODO : key 타입 불일치
+         * String으로 조회하는데 Long으로 저장
+         *
+         * map의 제네릭은 Map<Long, Boolean>인데 containsKey(streamKey)에서 String임
+         * Long, String 불일치
+         * */
+
         if (registeredStreams.containsKey(streamKey)) {
             return;
         }
@@ -60,6 +68,7 @@ public class QueueRegisterStreamService {
 
     public void alarmStream(Long eventId) {
         String streamRankKey = "streamRank:" + eventId;
+        // TODO : 여기도 타입 불일치 String
         if (alarmStreams.containsKey(streamRankKey)) {
             return;
         }

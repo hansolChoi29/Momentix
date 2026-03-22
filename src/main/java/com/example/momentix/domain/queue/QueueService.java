@@ -129,6 +129,7 @@ public class QueueService {
 
             for (String token : batch) {
                 // token에 맞는 sessionId값 가져오기
+                // TODO : requireNonNull이 NPE를 더 명확하게 던질 뿐 막아주진 않음
                 String sessionId = Objects.requireNonNull(redisTemplate.opsForValue().get(tokenKey + eventId + ":" + token)).split(":")[0];
                 String userId = Objects.requireNonNull(redisTemplate.opsForValue().get(tokenKey + eventId + ":" + token)).split(":")[1];
                 // sessionId 값 없을경우 continue

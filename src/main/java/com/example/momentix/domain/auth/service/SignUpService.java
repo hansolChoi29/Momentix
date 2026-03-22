@@ -40,9 +40,9 @@ public class SignUpService {
 
     @Transactional
     public Map<String, String> signUpHost(SignUpRequest signUpRequest) {
-        // 409: 사업자번호 중복 확인
+
         if (userRepository.existsByBusinessNumber(signUpRequest.getBusinessNumber())) {
-            throw new AuthErrorException(BAD_REQUEST);
+            throw new AuthErrorException(CONFLICT);
         }
 
         String username = nextHostUsername(); // ex) momentixHost0001!

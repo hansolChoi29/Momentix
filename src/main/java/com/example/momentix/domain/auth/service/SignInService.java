@@ -25,6 +25,7 @@ public class SignInService {
         SignIn user = signInRepository.findByUsername(signInCommand.getUsername())
                 .orElseThrow(() -> new AuthErrorException(NOT_FOUND));
 
+        // TODO : 비번 비교 검증
         String accessToken = JwtUtil.createAccessToken(
                 user.getSignInId(),
                 user.getUsername(),
@@ -38,7 +39,6 @@ public class SignInService {
         );
     }
 
-    // 리프레시 엔드포인트
     public SignIn loadByUserId(Long userId) {
         return signInRepository.findById(userId)
                 .orElseThrow(() -> new AuthErrorException(NOT_FOUND));
