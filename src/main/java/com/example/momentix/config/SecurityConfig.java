@@ -35,8 +35,19 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
-                        .requestMatchers("/auth/sign-in/**", "/auth/sign-in/callback/**").permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/auth/**"
+                        ).permitAll()
+                        .requestMatchers(
+                                "/auth/sign-in/**",
+                                "/auth/sign-in/callback/**"
+                        ).permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
                         // host 공연등록 가능
                         .requestMatchers(HttpMethod.POST, "/events").hasRole("HOST")
                         .requestMatchers(HttpMethod.POST, "/seats/**").hasRole("HOST")
