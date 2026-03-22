@@ -2,6 +2,8 @@ package com.example.momentix.domain.bookmark.controller;
 
 import com.example.momentix.domain.bookmark.dto.response.BookmarkResponseDto;
 import com.example.momentix.domain.bookmark.service.BookmarkService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

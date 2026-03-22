@@ -3,6 +3,8 @@ package com.example.momentix.domain.events.controller;
 import com.example.momentix.domain.events.dto.response.PartRowColSeatResponseDto;
 import com.example.momentix.domain.events.dto.response.SeatResponseDto;
 import com.example.momentix.domain.events.service.SeatService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,12 +16,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Tag(name = "Seat", description = "좌석 관련 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/events")
 public class SeatController {
     private final SeatService seatService;
 
+    @Operation(summary = "공연 좌석 등록", description = "CSV 파일로 공연별 좌석 등록")
     @PostMapping("/{eventId}/{placeId}/seats")
     public ResponseEntity<List<SeatResponseDto>> createSeat(
             @RequestPart("file") MultipartFile seatFile,
@@ -28,7 +32,7 @@ public class SeatController {
         return new ResponseEntity<>(seatService.createSeat(seatFile, placeId, eventId), HttpStatus.CREATED);
     }
 
-
+    @Operation(summary = "좌석 조회", description = "파트/행/열 조건으로 필터링 가능")
     @GetMapping("/{eventId}/{placeId}/event-time/{eventTimeId}")
     public ResponseEntity<Page<PartRowColSeatResponseDto>> readPartSeats(
             @PathVariable Long eventId,
@@ -43,6 +47,7 @@ public class SeatController {
                 eventId, placeId, eventTimeId, partId, rowId, colId, pageable), HttpStatus.OK);
     }
 
+    @Operation(summary = "좌석 수정", description = "CSV 파일로 좌석 정보 수정")
     @PatchMapping("/{eventId}/{placeId}/seats")
     public ResponseEntity<Void> updateSeat(
             @RequestPart("file") MultipartFile seatFile,
@@ -52,7 +57,7 @@ public class SeatController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-
+    @Operation(summary = "좌석 삭제", description = "CSV 파일로 삭제할 좌석 지정")
     @DeleteMapping("/{placeId}/seats")
     public ResponseEntity<Void> softDeleteSeats(
             @RequestPart("file") MultipartFile deleteFile,
