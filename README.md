@@ -9,6 +9,9 @@ Moment + Tix (Tickets) : 특별한 순간을 위한 티켓 예매 서비스
 - (배포) OpenAPI JSON: http://<public_Ip>:8080/v3/api-docs
 - (로컬) Swagger UI: http://localhost:8080/swagger-ui/index.html
 
+## SequenceDiagram
+[SequenceDiagramLink](https://www.notion.so/SequenceDiagram-32bf4c1d4f1b80ab9d33ee1b2b4fa5f4?source=copy_link)
+
 ## 👥 팀원 소개
 
 | 이름 | 직책 |                 담당                  | GitHub | Blog |
