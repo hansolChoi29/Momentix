@@ -48,11 +48,12 @@ public class SeatService {
     private final EventTimeReserveSeatRepository eventTimeReserveSeatRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
-
     @Transactional
-    public List<SeatResponseDto> createSeat(MultipartFile seatFile,
-                                            Long placeId,
-                                            Long eventId) {
+    public List<SeatResponseDto> createSeat(
+            MultipartFile seatFile,
+            Long placeId,
+            Long eventId
+    ) {
         // 좌석 등급 설정할 공연이 맞는지 확인
         Events events = eventsRepository.findById(eventId).orElseThrow(() -> new EventErrorException(SEAT_NOT_FOUND));
 
@@ -102,7 +103,7 @@ public class SeatService {
             }
             return seatList;
         } catch (IOException e) {
-            return null;
+            throw new EventErrorException(IO_ERROR);
         }
     }
 
@@ -135,10 +136,8 @@ public class SeatService {
             return baseSeatList;
 
         } catch (IOException e) {
-            return null;
+            throw new EventErrorException(IO_ERROR);
         }
-
-
     }
 
     @Transactional(readOnly = true)
@@ -188,7 +187,6 @@ public class SeatService {
             throw new EventErrorException(IO_ERROR);
         }
     }
-
 
     @Transactional
     public void deleteSeat(MultipartFile seatFile, Long placeId) {

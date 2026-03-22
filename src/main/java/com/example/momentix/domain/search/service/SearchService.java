@@ -5,6 +5,7 @@ import com.example.momentix.domain.events.repository.EventsRepository;
 import com.example.momentix.domain.search.dto.*;
 import com.example.momentix.domain.search.repository.AnalyticsRepository;
 import com.example.momentix.domain.search.repository.SuggestRepository;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -19,7 +20,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+
 @Service
+@RequiredArgsConstructor
 public class SearchService {
     private static final Logger log = LoggerFactory.getLogger(SearchService.class);
     private final EventsRepository eventsRepository;
@@ -28,16 +31,6 @@ public class SearchService {
     // 인기 검색어 캐시 (1시간 단위 랭킹 고정 노출)
     private volatile List<AutocompleteResponse> cachedPopular = null;
     private volatile long popularCacheExpireAtMillis = 0L; // 캐시 만료 시각(밀리초)
-
-    public SearchService(
-            EventsRepository eventsRepository,
-            SuggestRepository suggestRepository,
-            AnalyticsRepository analyticsRepository
-    ) {
-        this.eventsRepository = eventsRepository;
-        this.suggestRepository = suggestRepository;
-        this.analyticsRepository = analyticsRepository;
-    }
 
     @Transactional(readOnly = true)
     public Page<SearchResponseDto> searchEvent(

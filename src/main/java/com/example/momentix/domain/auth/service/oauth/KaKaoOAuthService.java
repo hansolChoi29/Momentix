@@ -95,6 +95,8 @@ public class KaKaoOAuthService implements OAuthService {
                     accessJwt, refreshJwt, user.getUserId(), email, user.getNickname(), "KAKAO"
             );
 
+        } catch (AuthErrorException e) {
+            throw e; // 내부에서 세밀하게 던진 에러코드 그대로 전달
         } catch (Exception e) {
             throw new AuthErrorException(OAUTH_PROVIDER_ERROR);
         }

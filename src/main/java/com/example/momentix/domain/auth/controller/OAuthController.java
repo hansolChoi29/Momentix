@@ -84,8 +84,17 @@ public class OAuthController {
     @GetMapping("/callback/naver")
     public OAuthSignInResponse callback(
             @RequestParam("code") String code,
-            @RequestParam("state") String stateParam
+            @RequestParam("state") String stateParam,
+            HttpSession session
     ) {
+        String expected = (String) session.getAttribute("OAUTH_STATE_KAKAO");
+
+        session.removeAttribute("OAUTH_STATE_NAVER");
+
+        if (expected != null && !expected.equals(stateParam)) {
+            throw new IllegalArgumentException("CSRF 의심: state 불일치(NAVER)");
+        }
+
         OAuthService service = oAuthServiceFactory.getOAuthService(OAuthProvider.NAVER);
         return service.signIn(code, stateParam);
     }
