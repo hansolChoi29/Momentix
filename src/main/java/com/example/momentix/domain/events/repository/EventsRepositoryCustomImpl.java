@@ -1,5 +1,7 @@
 package com.example.momentix.domain.events.repository;
 
+import com.example.momentix.domain.common.exception.event.EventErrorCode;
+import com.example.momentix.domain.common.exception.event.EventErrorException;
 import com.example.momentix.domain.events.dto.response.EventTimeResponseDto;
 import com.example.momentix.domain.events.dto.response.ReadCastResponseDto;
 import com.example.momentix.domain.events.dto.response.ReadEventResponseDto;
@@ -60,8 +62,12 @@ public class EventsRepositoryCustomImpl implements EventsRepositoryCustom {
                         events.id.eq(eventId)
                                 .and(places.id.eq(placeId))
                                 .and(events.isDeleted.eq(false)))
-                .fetchOne();
 
+                .fetchOne();
+        
+        if (readEvent == null) {
+            throw new EventErrorException(EventErrorCode.EVENT_NOT_FOUND);
+        }
         List<EventTimeResponseDto> eventTimeDtoList = queryFactory
                 .select(Projections.constructor(EventTimeResponseDto.class,
                         eventTimes.eventStartTime,
@@ -164,7 +170,7 @@ public class EventsRepositoryCustomImpl implements EventsRepositoryCustom {
         long total = Optional.ofNullable(queryFactory
                 .select(events.count())
                 .from(events)
-                .join(events.eventPlaceList, eventPlace)
+                .leftJoin(events.eventPlaceList, eventPlace)
                 .leftJoin(eventPlace.places, places)
                 .where(
                         events.isDeleted.eq(false),

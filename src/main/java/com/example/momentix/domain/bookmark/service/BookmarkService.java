@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static com.example.momentix.domain.common.exception.event.EventErrorCode.*;
-import static org.springframework.messaging.simp.SimpMessageHeaderAccessor.getUser;
 
 import java.util.Optional;
 
