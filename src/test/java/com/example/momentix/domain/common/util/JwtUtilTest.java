@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.core.Authentication;
 
 
 import javax.crypto.SecretKey;
@@ -24,12 +25,6 @@ class JwtUtilTest {
         JwtUtil.init(SECRET);
     }
 
-
-    /*
-    createAccessToken
-    1. accessToken 발급 시 subject는 email, claim에 userId와 role이 담김
-    2. accessToken의 타입은 access
-    */
     @Test
     @DisplayName("accessToken_발급_시_subject는_email_claim에_userId와_role이_담김")
     void createAccessToken_claimsAreCorrect() {
@@ -48,11 +43,6 @@ class JwtUtilTest {
         assertThat(JwtUtil.getTokenType(token)).isEqualTo("access");
     }
 
-    /*
-    createRefreshToken
-    1. refreshToken의 타입은 refresh
-    2. refreshToken에서 userId 추출 가능
-    */
     @Test
     @DisplayName("refreshToken의_타입은_refresh")
     void createRefreshToken_typeIsRefresh() {
@@ -69,12 +59,6 @@ class JwtUtilTest {
         assertThat(JwtUtil.getUserIdFromToken(token)).isEqualTo(1L);
     }
 
-    /*
-    validateToken
-    1. 유효한 토큰은 validateToken이 true 반환
-    2. 만료된 토큰은 validateToken이 false 반환
-    3. 위변조된 토큰은 validateToken이 false 반환
-    */
     @Test
     @DisplayName("유효한_토큰은_validateToken이_true_반환")
     void validationToken_validToken_returnsTure() {
@@ -96,14 +80,33 @@ class JwtUtilTest {
 
         assertThat(JwtUtil.validateToken(expiredToken)).isFalse();
     }
-    /*
-    isRefreshToken
-    1. refreshToken으로 isRefreshToken 호출하면 true
-    2. accessToken으로 isRefreshToken 호출하면 false
-    */
 
-    /*
-    getAuthenticationFromToken
-    1. accessToken으로 Authentication 객체 생성 시 principal은 email, authority는 ROLE_CONSUMER
-    */
+    @Test
+    @DisplayName("위변조된_토큰은_validateToken이_false_반환")
+    void validateToken_tamperedToken_returnsFalse() {
+        String token = JwtUtil.createAccessToken(1L, "test@test.com", RoleType.CONSUMER);
+        String tampered = token + "tempered";
+
+        assertThat(JwtUtil.validateToken(tampered)).isFalse();
+    }
+
+    @Test
+    @DisplayName("refreshToken으로_isRefreshToken_호출하면_true")
+    void isRefreshToken_withRefreshToken_returnsTrue() {
+        String token = JwtUtil.createRefreshToken(1L);
+        assertThat(JwtUtil.isRefreshToken(token)).isTrue();
+    }
+
+    @Test
+    @DisplayName("accessToken으로 Authentication 객체 생성 시 principal은 email, authority는 ROLE_CONSUMER")
+    void getAuthenticationFromToken_returnsCorrectAuthentication() {
+        String token = JwtUtil.createAccessToken(1L, "test@test.com", RoleType.CONSUMER);
+
+        Authentication auth = JwtUtil.getAuthenticationFromToken(token);
+
+        assertThat(auth.getPrincipal()).isEqualTo("test@test.com");
+        assertThat(auth.getAuthorities())
+                .extracting("authority")
+                .containsExactly("ROLE_CONSUMER");
+    }
 }
