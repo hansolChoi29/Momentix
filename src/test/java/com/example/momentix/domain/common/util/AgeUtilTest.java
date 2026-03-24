@@ -31,4 +31,12 @@ class AgeUtilTest {
 
         assertThat(AgeUtil.isOverAge(birthDay, 19)).isFalse();
     }
+
+    @Test
+    @DisplayName("age가_0이면_항상_true_반환_전체이용가")
+    void isOverAge_ageZero_alwaysTrue() {
+        LocalDate birthDate = LocalDate.now();
+
+        assertThat(AgeUtil.isOverAge(birthDate, 0)).isTrue();
+    }
 }
