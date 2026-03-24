@@ -20,6 +20,15 @@ class AgeUtilTest {
     @DisplayName("만_나이_기준_생일_당일이면_true_반환")
     void isOverAge_exactBirthday_returnsTrue() {
         LocalDate birthDate = LocalDate.now().minusYears(19);
+
         assertThat(AgeUtil.isOverAge(birthDate, 19)).isTrue();
+    }
+
+    @Test
+    @DisplayName("생일_하루_전이면_false_반환")
+    void isOverAge_oneDayBeforeBirthday_returnsFalse() {
+        LocalDate birthDay = LocalDate.now().minusYears(19).plusDays(1);
+
+        assertThat(AgeUtil.isOverAge(birthDay, 19)).isFalse();
     }
 }
