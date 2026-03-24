@@ -39,7 +39,6 @@ public class JwtUtil {
                 .compact();
     }
 
-    // TODO 하드코딩 Subject가 refresh 문자열로 하드코딩
     public static String createRefreshToken(Long userId) {
         return Jwts.builder()
                 .setSubject("refresh")
