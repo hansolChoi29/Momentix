@@ -1,6 +1,10 @@
 package com.example.momentix.config;
 
+import java.util.List;
 
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.example.momentix.domain.common.filter.JwtAuthorizationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +36,7 @@ public class SecurityConfig {
             AuthenticationProvider authenticationProvider
     ) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -49,8 +54,10 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
                         // host 공연등록 가능
-                        .requestMatchers(HttpMethod.POST, "/events").hasRole("HOST")
-                        .requestMatchers(HttpMethod.POST, "/seats/**").hasRole("HOST")
+                        .requestMatchers(HttpMethod.POST, "/events/*/*/seats").hasRole("HOST")
+                        .requestMatchers(HttpMethod.PATCH, "/events/*/*/seats").hasRole("HOST")
+                        .requestMatchers(HttpMethod.DELETE, "/events/*/*/seats").hasRole("HOST")
+                        .requestMatchers(HttpMethod.PUT, "/events/**").hasRole("HOST")
                         // websocket 모두 허용
                         .requestMatchers("/ws/**").permitAll()
                         // 대기열 모두 허용
@@ -72,6 +79,7 @@ public class SecurityConfig {
                         // 결제는 CONSUMER만
                         .requestMatchers("/payment/**").hasRole("CONSUMER")
                         // 특정 조건을 지정하지 않은 나머지 모든 API는 로그인만 했으면 호출 가능함
+                        .requestMatchers(HttpMethod.GET, "/events/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider)
@@ -95,5 +103,22 @@ public class SecurityConfig {
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
         return provider;
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "http://localhost:5173"
+        ));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

@@ -28,7 +28,7 @@ public class ReviewController {
     @PostMapping("/events/{eventId}")
     public ResponseEntity<ReviewResponseDto> createReview(
             @PathVariable Long eventId,
-            @RequestBody CreateReviewRequestDto requestDto,
+            @Valid @RequestBody CreateReviewRequestDto requestDto,
             @AuthenticationPrincipal String email
     ) {
         ReviewResponseDto response = reviewService.createReview(

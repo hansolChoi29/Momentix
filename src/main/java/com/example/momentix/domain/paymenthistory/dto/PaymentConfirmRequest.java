@@ -7,9 +7,12 @@ public class PaymentConfirmRequest {
     private final Long reservationId;
     private long pointsToUse;
 
-    @JsonCreator
-    public PaymentConfirmRequest(@JsonProperty("reservationId") Long reservationId, @JsonProperty("pointToUse") long pointsToUse) {
+    public PaymentConfirmRequest(
+            @JsonProperty("reservationId") Long reservationId,
+            @JsonProperty("pointsToUse") long pointsToUse
+    ) {
         this.reservationId = reservationId;
+        this.pointsToUse = pointsToUse;
     }
 
     public Long getReservationId() {

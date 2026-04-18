@@ -1,9 +1,6 @@
 package com.example.momentix.domain.events.service;
 
-import com.example.momentix.domain.events.dto.request.CreateCastRequestDto;
-import com.example.momentix.domain.events.dto.request.CreateEventsRequestDto;
-import com.example.momentix.domain.events.dto.request.PlacesRequestDto;
-import com.example.momentix.domain.events.dto.request.UpdateBaseEventRequestDto;
+import com.example.momentix.domain.events.dto.request.*;
 import com.example.momentix.domain.events.dto.response.AllReadEventsResponseDto;
 import com.example.momentix.domain.events.dto.response.EventsResponseDto;
 import com.example.momentix.domain.events.dto.response.ReadEventResponseDto;
@@ -53,7 +50,7 @@ public class EventsService {
                 new PlacesRequestDto(requestDto.getPlaceName(), requestDto.getPlaceAddress()));
 
         // EventTimes(공연 시간) 생성
-        for (EventTimes eventTimesRequest : requestDto.getEventTimeList()) {
+        for (EventTimeRequestDto eventTimesRequest : requestDto.getEventTimeList()) {
             EventTimes eventTimes = EventTimes.builder()
                     .eventStartTime(eventTimesRequest.getEventStartTime())
                     .eventEndTime(eventTimesRequest.getEventEndTime())
