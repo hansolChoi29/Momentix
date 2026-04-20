@@ -64,9 +64,8 @@ public class SearchController {
     // 인기검색어
     @GetMapping("/popular-queries")
     public List<AutocompleteResponse> popularQueries(
-            @RequestParam(value = "hours", defaultValue = "1") int hours,
             @RequestParam(value = "size", defaultValue = "10") int size) {
-        return searchService.popularQueries(hours, size);
+        return searchService.popularQueries(size);
     }
 
     // 시간대별 건수

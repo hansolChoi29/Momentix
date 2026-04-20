@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class SignOutService {
-    // TODO ACCESS_TOKEN명 불일치 AuthController
     private static final String ACCESS_TOKEN = "ACCESS_TOKEN";
     private static final String REFRESH_TOKEN = "REFRESH_TOKEN";
 

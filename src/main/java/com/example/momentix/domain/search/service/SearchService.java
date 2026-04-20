@@ -54,7 +54,7 @@ public class SearchService {
         List<AutocompleteResponse> result = suggestRepository.suggest(input, limit);
         // 결과 없으면 인기검색어로 폴백
         if (result.isEmpty()) {
-            return popularQueries(1, limit);
+            return popularQueries(limit);
         }
         return result;
     }
@@ -77,30 +77,21 @@ public class SearchService {
     }
 
     @Transactional(readOnly = true)
-    public List<AutocompleteResponse> popularQueries(
-            int hours,
-            int size
-    ) {
+    public List<AutocompleteResponse> popularQueries(int size) {
         final int topN = (size > 0) ? size : 10;
         final long now = System.currentTimeMillis();
 
-        // 1) 캐시 유효하면 그대로 반환 (ES 재조회 막기)
-        List<AutocompleteResponse> local = cachedPopular; // volatile 읽기
+        List<AutocompleteResponse> local = cachedPopular;
         if (local != null && now < popularCacheExpireAtMillis) {
             return (local.size() > topN) ? local.subList(0, topN) : local;
         }
 
-        // 2) 캐시 만료/미존재 → 동기화 블록에서 한 번만 갱신
         synchronized (this) {
-            // 들어오는 동안 이미 갱신됐을 수 있으니 재확인
             if (cachedPopular != null && System.currentTimeMillis() < popularCacheExpireAtMillis) {
                 return (cachedPopular.size() > topN) ? cachedPopular.subList(0, topN) : cachedPopular;
             }
 
-            // 기획 고정: 최근 1시간 집계만 사용
             List<AutocompleteResponse> fresh = analyticsRepository.popularQueries(1, topN);
-
-            // 캐시에 저장 + 만료시각을 다음 정각으로 설정 (랭킹 1시간 단위 고정 노출)
             cachedPopular = (fresh == null) ? List.of() : fresh;
             popularCacheExpireAtMillis = nextTopOfHourMillis();
 

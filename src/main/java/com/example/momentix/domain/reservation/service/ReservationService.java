@@ -3,6 +3,7 @@ package com.example.momentix.domain.reservation.service;
 import com.example.momentix.domain.common.exception.auth.AuthErrorException;
 import com.example.momentix.domain.common.exception.event.EventErrorException;
 import com.example.momentix.domain.common.exception.reservation.ReservationErrorException;
+import com.example.momentix.domain.common.util.AgeUtil;
 import com.example.momentix.domain.events.entity.EventPlace;
 import com.example.momentix.domain.events.entity.Events;
 import com.example.momentix.domain.events.entity.eventtimes.EventTimeReserveSeat;
@@ -29,8 +30,7 @@ import java.util.List;
 
 import static com.example.momentix.domain.common.exception.auth.AuthErrorCode.NOT_FOUND;
 import static com.example.momentix.domain.common.exception.event.EventErrorCode.*;
-import static com.example.momentix.domain.common.exception.reservation.ReservationErrorCode.NO_MY_RESERVATION;
-import static com.example.momentix.domain.common.exception.reservation.ReservationErrorCode.NO_RESERVATION;
+import static com.example.momentix.domain.common.exception.reservation.ReservationErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -57,12 +57,16 @@ public class ReservationService {
     ) {
         Users user = getUser(email);
         Long userId = user.getUserId();
-        //이용자와 공연 존재 확인
 
         Events event = eventsRepository.findById(eventId)
                 .orElseThrow(() -> new EventErrorException(EVENT_NOT_FOUND));
 
-        //해당 상태의 예매 상태가 있는지 조회
+        int requiredAge = event.getAgeRatingType().getAge();
+
+        if (requiredAge > 0 && !AgeUtil.isOverAge(user.getBirthDate(), requiredAge)) {
+            throw new ReservationErrorException(AGE_RESTRICTED);
+        }
+
         Reservations reservation = reservationsRepository.findActiveByUsers_UsersIdAndEvents_Id(
                 userId, eventId, List.of(
                         ReservationStatusType.DRAFT,

@@ -14,30 +14,22 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public class CreateEventsRequestDto {
-
-    // Event Entity 값
     private String eventTitle;
     private EventCategoryType eventCategory;
     private AgeRatingType ageRating;
     private LocalDate eventStartDate;
     private LocalDate eventEndDate;
 
-    // Place Entity값
     private String placeName;
     private String placeAddress;
 
 
-    // EventTimes Entity값
-    private List<EventTimes> eventTimeList;
+    private List<EventTimeRequestDto> eventTimeList;
 
-    // ReservationTimes Entity 값
     private LocalDateTime reservationStartTime;
     private LocalDateTime reservationEndTime;
 
-    // Casts Entity 값
     private String castName;
-
-
 }
 
 
