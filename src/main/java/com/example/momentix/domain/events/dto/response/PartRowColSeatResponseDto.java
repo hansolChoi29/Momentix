@@ -17,4 +17,14 @@ public class PartRowColSeatResponseDto {
     private SeatStatusType seatReserveStatus;
     private Long seatRow;
     private Long seatCol;
+
+    public PartRowColSeatResponseDto(Long id, SeatGradeType seatGradeType, SeatPartType seatPartType, BigDecimal seatPrice, SeatStatusType seatReserveStatus, Long seatRow, Long seatCol) {
+        this.id = id;
+        this.seatGradeType = seatGradeType;
+        this.seatPartType = seatPartType;
+        this.seatPrice = seatPrice;
+        this.seatReserveStatus = seatReserveStatus;
+        this.seatRow = seatRow;
+        this.seatCol = seatCol;
+    }
 }

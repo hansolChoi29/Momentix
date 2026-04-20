@@ -11,5 +11,8 @@ public class SearchSeatRequestDto {
     private Long eventTimeId;
 
     public SearchSeatRequestDto(Long eventId, Long placeId, Long eventTimeId) {
+        this.eventId = eventId;
+        this.placeId = placeId;
+        this.eventTimeId = eventTimeId;
     }
 }

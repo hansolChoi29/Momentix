@@ -8,5 +8,9 @@ import java.time.LocalDateTime;
 public class ReservationTimeResponseDto {
     private LocalDateTime reservationStartDate;
     private LocalDateTime reservationEndDate;
-
+    
+    public ReservationTimeResponseDto(LocalDateTime reservationStartDate, LocalDateTime reservationEndDate) {
+        this.reservationStartDate = reservationStartDate;
+        this.reservationEndDate = reservationEndDate;
+    }
 }

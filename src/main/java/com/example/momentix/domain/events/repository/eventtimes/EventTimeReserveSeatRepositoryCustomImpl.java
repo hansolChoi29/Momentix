@@ -25,7 +25,12 @@ public class EventTimeReserveSeatRepositoryCustomImpl implements EventTimeReserv
     }
 
     private BooleanExpression partEq(Long partId) {
-        return partId != null ? QEventSeat.eventSeat.seatPartType.eq(SeatPartType.fromId(partId)) : null;
+        if (partId == null) {
+            return null;
+        }
+
+        SeatPartType seatPartType = SeatPartType.fromId(partId);
+        return seatPartType != null ? QEventSeat.eventSeat.seatPartType.eq(seatPartType) : null;
     }
 
     private BooleanExpression rowEq(Long rowId) {
@@ -44,6 +49,12 @@ public class EventTimeReserveSeatRepositoryCustomImpl implements EventTimeReserv
             Long colId,
             Pageable pageable) {
 
+//        System.out.println("eventId = " + requestDto.getEventId());
+//        System.out.println("placeId = " + requestDto.getPlaceId());
+//        System.out.println("eventTimeId = " + requestDto.getEventTimeId());
+//        System.out.println("partId = " + partId);
+//        System.out.println("rowId = " + rowId);
+//        System.out.println("colId = " + colId);
 
         QSeats s = QSeats.seats;
         QEventTimeReserveSeat etrs = QEventTimeReserveSeat.eventTimeReserveSeat;
